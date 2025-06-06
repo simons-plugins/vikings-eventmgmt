@@ -309,6 +309,7 @@ async function getSections() {
 // OSM login button
 document.getElementById('osm-login-btn').addEventListener('click', function () {
     const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+    console.log('Redirecting to:', authUrl); // <-- Add this line
     window.location.href = authUrl;
 });
 
