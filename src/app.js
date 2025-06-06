@@ -1,7 +1,7 @@
-const clientId = 'vifnubG1UFN63p8n3qK5wnOTHs5QQimP';
+const clientId = '98YWRWrOQyUVAlJuPHs8AdsbVg2mUCQO'; // <-- New OSM OAuth Client ID
 const scope = 'section:member:read section:programme:read section:event:read';
 const redirectUri = window.location.origin + '/callback.html';
-const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com'; // <-- Set your Render backend URL here
+const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com'; // <-- Your backend URL
 
 // Helper: Get most recent termid for a section
 async function getTermsForSection(sectionId) {
