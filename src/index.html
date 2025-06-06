@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Viking Scouts</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://vikings-osm-event-manager.onrender.com https://www.onlinescoutmanager.co.uk;">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
+    <script>
+      Sentry.init({ dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544' });
+    </script>
 </head>
 <body>
     <header>
@@ -23,6 +28,8 @@
             </div>
         </div>
     </main>
-    <script src="app.js"></script>
+    <div id="error-message" style="display:none;color:red;text-align:center;margin:1em 0;"></div>
+    <div id="spinner" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;">⏳ Loading...</div>
+    <script type="module" src="main.js"></script>
 </body>
 </html>

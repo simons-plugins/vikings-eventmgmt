@@ -28,7 +28,7 @@
             .then(data => {
                 console.log('Token exchange response:', data);
                 if (data.access_token) {
-                    localStorage.setItem('access_token', data.access_token);
+                    sessionStorage.setItem('access_token', data.access_token); // <-- changed
                     window.location.href = 'index.html';
                 } else {
                     document.body.innerHTML = '<h1>Authentication failed.</h1><pre>' + JSON.stringify(data, null, 2) + '</pre>';

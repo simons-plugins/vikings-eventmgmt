@@ -1,30 +1,17 @@
-const clientId = '98YWRWrOQyUVAlJuPHs8AdsbVg2mUCQO'; // <-- New OSM OAuth Client ID
-const scope = 'section:member:read section:programme:read section:event:read';
-const redirectUri = window.location.origin + '/callback.html';
-const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com'; // <-- Your backend URL
-
-// Helper: Get most recent termid for a section
-async function getTermsForSection(sectionId) {
-    const token = localStorage.getItem('access_token');
-    if (!token) return [];
-    const response = await fetch(`${BACKEND_URL}/get-terms`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: token })
-    });
-    const data = await response.json();
-    return data[sectionId] || [];
+export function showSpinner() {
+    document.getElementById('spinner').style.display = 'block';
+}
+export function hideSpinner() {
+    document.getElementById('spinner').style.display = 'none';
+}
+export function showError(msg) {
+    const el = document.getElementById('error-message');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 
-async function getMostRecentTermId(sectionId) {
-    const terms = await getTermsForSection(sectionId);
-    if (!terms.length) return null;
-    terms.sort((a, b) => new Date(b.enddate) - new Date(a.enddate));
-    return terms[0].termid;
-}
-
-// Render sections as a table with checkboxes
-function renderSectionsTable(sectionIdToName) {
+export function renderSectionsTable(sectionIdToName, onLoadEvents) {
     let container = document.getElementById('sections-table-container');
     if (!container) {
         container = document.createElement('div');
@@ -41,10 +28,10 @@ function renderSectionsTable(sectionIdToName) {
     html += `</table>
     <button id="load-events-btn">Load Events</button>`;
     container.innerHTML = html;
+    document.getElementById('load-events-btn').onclick = onLoadEvents;
 }
 
-// Render events table with checkboxes and Section column
-function renderEventsTable(events) {
+export function renderEventsTable(events, onLoadAttendees) {
     let table = document.getElementById('events-table');
     if (!table) {
         table = document.createElement('table');
@@ -88,40 +75,10 @@ function renderEventsTable(events) {
         btn.textContent = 'Show Attendees for Selected Events';
         table.parentElement.appendChild(btn);
     }
-    btn.onclick = async function () {
-        const checked = Array.from(document.querySelectorAll('.event-checkbox:checked'));
-        if (checked.length === 0) {
-            alert('Please select at least one event.');
-            return;
-        }
-        const token = localStorage.getItem('access_token');
-        let allAttendees = [];
-        for (const cb of checked) {
-            const idx = cb.getAttribute('data-idx');
-            const event = events[idx];
-            const attendanceResponse = await fetch(`${BACKEND_URL}/get-event-attendance`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    access_token: token,
-                    eventid: event.eventid,
-                    sectionid: event.sectionid,
-                    termid: event.termid
-                })
-            });
-            const attendance = await attendanceResponse.json();
-            if (attendance.items && Array.isArray(attendance.items)) {
-                const filtered = attendance.items.filter(person => person.attending && person.attending.trim() !== '');
-                filtered.forEach(person => person._eventName = event.name);
-                allAttendees = allAttendees.concat(filtered);
-            }
-        }
-        renderAttendeesTable(allAttendees);
-    };
+    btn.onclick = onLoadAttendees;
 }
 
-// Render attendees table
-function renderAttendeesTable(attendees) {
+export function renderAttendeesTable(attendees) {
     let attendancePanel = document.getElementById('attendance-panel');
     attendancePanel.innerHTML = '';
 
@@ -245,73 +202,3 @@ function renderAttendeesTable(attendees) {
     // Initial render
     renderTableRows();
 }
-
-// Main function to handle after authentication
-async function getSections() {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        alert('No access token found. Please log in first.');
-        return;
-    }
-
-    const response = await fetch(`${BACKEND_URL}/get-user-roles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: token })
-    });
-
-    const roles = await response.json();
-    const sectionIdToName = {};
-    roles.forEach(role => {
-        if (role.sectionid && role.sectionname) {
-            sectionIdToName[role.sectionid] = role.sectionname;
-        }
-    });
-
-    renderSectionsTable(sectionIdToName);
-
-    document.getElementById('load-events-btn').onclick = async function () {
-        const checked = Array.from(document.querySelectorAll('.section-checkbox:checked'));
-        if (checked.length === 0) {
-            alert('Please select at least one section.');
-            return;
-        }
-        let allEvents = [];
-        for (const cb of checked) {
-            const sectionid = cb.value;
-            const sectionname = sectionIdToName[sectionid];
-            const termid = await getMostRecentTermId(sectionid);
-            if (!termid) continue;
-            const resp = await fetch(`${BACKEND_URL}/get-events`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    access_token: token,
-                    sectionid,
-                    termid
-                })
-            });
-            const events = await resp.json();
-            if (Array.isArray(events.items)) {
-                // Attach section name, sectionid, and termid to each event
-                events.items.forEach(ev => {
-                    ev.sectionname = sectionname;
-                    ev.sectionid = sectionid;
-                    ev.termid = termid;
-                });
-                allEvents = allEvents.concat(events.items);
-            }
-        }
-        renderEventsTable(allEvents);
-    };
-}
-
-// OSM login button
-document.getElementById('osm-login-btn').addEventListener('click', function () {
-    const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
-    console.log('Redirecting to:', authUrl); // <-- Add this line
-    window.location.href = authUrl;
-});
-
-// Get sections button
-document.getElementById('get-sections-btn').addEventListener('click', getSections);
