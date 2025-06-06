@@ -1,12 +1,13 @@
 const clientId = 'JiZxFkZiFaBrlyO6g4cCBEfig1hOKEex';
 const scope = 'section:member:read section:programme:read section:event:read';
 const redirectUri = window.location.origin + '/callback.html';
+const BACKEND_URL = 'https://your-backend.onrender.com'; // <-- Set your Render backend URL here
 
 // Helper: Get most recent termid for a section
 async function getTermsForSection(sectionId) {
     const token = localStorage.getItem('access_token');
     if (!token) return [];
-    const response = await fetch('http://localhost:3001/get-terms', {
+    const response = await fetch(`${BACKEND_URL}/get-terms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ access_token: token })
@@ -98,7 +99,7 @@ function renderEventsTable(events) {
         for (const cb of checked) {
             const idx = cb.getAttribute('data-idx');
             const event = events[idx];
-            const attendanceResponse = await fetch('http://localhost:3001/get-event-attendance', {
+            const attendanceResponse = await fetch(`${BACKEND_URL}/get-event-attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -253,7 +254,7 @@ async function getSections() {
         return;
     }
 
-    const response = await fetch('http://localhost:3001/get-user-roles', {
+    const response = await fetch(`${BACKEND_URL}/get-user-roles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ access_token: token })
@@ -281,7 +282,7 @@ async function getSections() {
             const sectionname = sectionIdToName[sectionid];
             const termid = await getMostRecentTermId(sectionid);
             if (!termid) continue;
-            const resp = await fetch('http://localhost:3001/get-events', {
+            const resp = await fetch(`${BACKEND_URL}/get-events`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
