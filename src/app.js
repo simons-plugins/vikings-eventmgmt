@@ -1,4 +1,4 @@
-const clientId = 'JiZxFkZiFaBrlyO6g4cCBEfig1hOKEex';
+const clientId = 'vifnubG1UFN63p8n3qK5wnOTHs5QQimP';
 const scope = 'section:member:read section:programme:read section:event:read';
 const redirectUri = window.location.origin + '/callback.html';
 const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com'; // <-- Set your Render backend URL here
