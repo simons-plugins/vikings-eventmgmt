@@ -1,7 +1,7 @@
 const clientId = 'JiZxFkZiFaBrlyO6g4cCBEfig1hOKEex';
 const scope = 'section:member:read section:programme:read section:event:read';
 const redirectUri = window.location.origin + '/callback.html';
-const BACKEND_URL = 'https://your-backend.onrender.com'; // <-- Set your Render backend URL here
+const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com'; // <-- Set your Render backend URL here
 
 // Helper: Get most recent termid for a section
 async function getTermsForSection(sectionId) {
