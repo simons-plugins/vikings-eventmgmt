@@ -11,7 +11,7 @@ export function showError(msg) {
     setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 
-export function renderSectionsTable(sectionIdToName, onLoadEvents) {
+export function renderSectionsTable(sections, onLoadEvents) {
     let container = document.getElementById('sections-table-container');
     if (!container) {
         container = document.createElement('div');
@@ -19,16 +19,19 @@ export function renderSectionsTable(sectionIdToName, onLoadEvents) {
         document.querySelector('.login-container').appendChild(container);
     }
     let html = `<table id="sections-table"><tr><th>Select</th><th>Section Name</th></tr>`;
-    Object.entries(sectionIdToName).forEach(([sectionid, sectionname]) => {
+    sections.forEach(section => {
         html += `<tr>
-            <td><input type="checkbox" class="section-checkbox" value="${sectionid}"></td>
-            <td>${sectionname}</td>
+            <td><input type="checkbox" class="section-checkbox" value="${section.sectionid}"></td>
+            <td>${section.sectionname}</td>
         </tr>`;
     });
     html += `</table>
     <button id="load-events-btn">Load Events</button>`;
     container.innerHTML = html;
-    document.getElementById('load-events-btn').onclick = onLoadEvents;
+    document.getElementById('load-events-btn').onclick = () => {
+        const selected = Array.from(document.querySelectorAll('.section-checkbox:checked')).map(cb => cb.value);
+        onLoadEvents(selected);
+    };
 }
 
 export function renderEventsTable(events, onLoadAttendees) {
