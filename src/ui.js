@@ -42,12 +42,21 @@ export function renderSectionsTable(sections, onLoadEvents) {
 }
 
 export function renderEventsTable(events, onLoadAttendees) {
+    let container = document.getElementById('events-table-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'events-table-container';
+        document.getElementById('app-content').appendChild(container);
+    }
+
     let table = document.getElementById('events-table');
     if (!table) {
         table = document.createElement('table');
         table.id = 'events-table';
-        document.querySelector('.login-container').appendChild(table);
+        table.className = 'table table-striped';
+        container.appendChild(table);
     }
+
     table.innerHTML = `
         <tr>
             <th>Select</th>
@@ -61,6 +70,7 @@ export function renderEventsTable(events, onLoadAttendees) {
             <th>No</th>
         </tr>
     `;
+    
     events.forEach((event, idx) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -82,8 +92,9 @@ export function renderEventsTable(events, onLoadAttendees) {
     if (!btn) {
         btn = document.createElement('button');
         btn.id = 'load-attendees-btn';
+        btn.className = 'btn btn-primary';
         btn.textContent = 'Show Attendees for Selected Events';
-        table.parentElement.appendChild(btn);
+        container.appendChild(btn);
     }
     btn.onclick = onLoadAttendees;
 }

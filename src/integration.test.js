@@ -4,7 +4,7 @@ import { renderSectionsTable, renderEventsTable, renderAttendeesTable, showError
 describe('Integration: Section/Event/Attendee Flow', () => {
   beforeEach(() => {
     document.body.innerHTML = `
-      <div class="login-container"></div>
+      <div id="app-content"></div>
       <div id="attendance-panel"></div>
       <div id="error-message" style="display:none"></div>
       <div id="spinner" style="display:none"></div>
@@ -12,19 +12,31 @@ describe('Integration: Section/Event/Attendee Flow', () => {
   });
 
   it('renders sections, events, and attendees tables with user interaction', () => {
-    // 1. Render sections table
-    const sectionIdToName = { '1': 'Beavers', '2': 'Cubs' };
+    // 1. Render sections table with correct data format
+    const sections = [
+      { sectionid: '1', sectionname: 'Beavers' },
+      { sectionid: '2', sectionname: 'Cubs' }
+    ];
     const mockLoadEvents = jest.fn();
-    renderSectionsTable(sectionIdToName, mockLoadEvents);
+    renderSectionsTable(sections, mockLoadEvents);
 
     // Check sections table
     const sectionsTable = document.getElementById('sections-table');
     expect(sectionsTable).toBeInTheDocument();
     expect(sectionsTable).toHaveTextContent('Beavers');
     expect(sectionsTable).toHaveTextContent('Cubs');
+    
+    // Check for checkboxes
+    const checkboxes = document.querySelectorAll('.section-checkbox');
+    expect(checkboxes).toHaveLength(2);
+    expect(checkboxes[0].value).toBe('1');
+    expect(checkboxes[1].value).toBe('2');
+
     // Simulate clicking "Load Events"
-    document.getElementById('load-events-btn').click();
-    expect(mockLoadEvents).toHaveBeenCalled();
+    const loadEventsBtn = document.getElementById('load-events-btn');
+    expect(loadEventsBtn).toBeInTheDocument();
+    loadEventsBtn.click();
+    expect(mockLoadEvents).toHaveBeenCalledWith([]);
 
     // 2. Render events table
     const events = [
@@ -39,8 +51,13 @@ describe('Integration: Section/Event/Attendee Flow', () => {
     expect(eventsTable).toBeInTheDocument();
     expect(eventsTable).toHaveTextContent('Camp');
     expect(eventsTable).toHaveTextContent('Hike');
+    expect(eventsTable).toHaveTextContent('Beavers');
+    expect(eventsTable).toHaveTextContent('Cubs');
+
     // Simulate clicking "Show Attendees for Selected Events"
-    document.getElementById('load-attendees-btn').click();
+    const loadAttendeesBtn = document.getElementById('load-attendees-btn');
+    expect(loadAttendeesBtn).toBeInTheDocument();
+    loadAttendeesBtn.click();
     expect(mockLoadAttendees).toHaveBeenCalled();
 
     // 3. Render attendees table
