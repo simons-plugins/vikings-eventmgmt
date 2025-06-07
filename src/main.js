@@ -55,10 +55,43 @@ function showMainUI() {
     });
 }
 
-// Example handler for section selection (expand as needed)
-function handleSectionSelect(sectionId) {
-    // Fetch and render events for the selected section
-    // Then render events table and set up event selection logic
+// Complete handler for section selection
+async function handleSectionSelect(selectedSectionIds) {
+    if (selectedSectionIds.length === 0) {
+        showError('Please select at least one section');
+        return;
+    }
+
+    showSpinner();
+    try {
+        let allEvents = [];
+        
+        // Fetch events for each selected section
+        for (const sectionId of selectedSectionIds) {
+            const termId = await getMostRecentTermId(sectionId);
+            if (termId) {
+                const events = await getEvents(sectionId, termId);
+                if (events.items) {
+                    allEvents = allEvents.concat(events.items);
+                }
+            }
+        }
+
+        // Render the events table
+        renderEventsTable(allEvents, handleEventSelect);
+        
+    } catch (err) {
+        showError('Failed to load events');
+        console.error(err);
+    } finally {
+        hideSpinner();
+    }
+}
+
+// Handler for event selection (to load attendees)
+async function handleEventSelect(selectedEventIds) {
+    // Add your attendees loading logic here
+    console.log('Selected events:', selectedEventIds);
 }
 
 // OSM login button logic
