@@ -154,7 +154,7 @@ async function handleSectionSelect(selectedSectionIds) {
     }
 }
 
-// Update handleEventSelect to accept selected events:
+// Update handleEventSelect to use real API data:
 async function handleEventSelect(selectedEvents) {
     if (!selectedEvents || selectedEvents.length === 0) {
         showError('Please select at least one event');
@@ -165,35 +165,56 @@ async function handleEventSelect(selectedEvents) {
     try {
         let allAttendees = [];
         
-        // Process each selected event
-        selectedEvents.forEach(event => {
-            // For now, create mock attendee data
-            // TODO: Replace with actual API call to get attendees
-            const mockAttendees = [
-                { 
-                    sectionname: event.sectionname || 'Unknown Section', 
-                    _eventName: event.name || 'Unknown Event', 
-                    firstname: 'John', 
-                    lastname: 'Smith', 
-                    attending: 'Yes' 
-                },
-                { 
-                    sectionname: event.sectionname || 'Unknown Section', 
-                    _eventName: event.name || 'Unknown Event', 
-                    firstname: 'Jane', 
-                    lastname: 'Doe', 
-                    attending: 'No' 
+        // Process each selected event and fetch real attendance data
+        for (const event of selectedEvents) {
+            try {
+                console.log('Fetching attendance for event:', event.eventid, event.name);
+                
+                // Use the actual API to get attendance data
+                const attendanceData = await getEventAttendance(event.sectionid, event.eventid);
+                
+                console.log('Attendance data received:', attendanceData);
+                
+                // Process the attendance data
+                if (attendanceData && attendanceData.items) {
+                    const eventAttendees = attendanceData.items.map(attendee => ({
+                        ...attendee,
+                        sectionname: event.sectionname,
+                        _eventName: event.name,
+                        _eventDate: event.date
+                    }));
+                    
+                    allAttendees = allAttendees.concat(eventAttendees);
+                } else if (attendanceData && Array.isArray(attendanceData)) {
+                    // Handle case where attendanceData is directly an array
+                    const eventAttendees = attendanceData.map(attendee => ({
+                        ...attendee,
+                        sectionname: event.sectionname,
+                        _eventName: event.name,
+                        _eventDate: event.date
+                    }));
+                    
+                    allAttendees = allAttendees.concat(eventAttendees);
+                } else {
+                    console.warn('No attendance data found for event:', event.name);
                 }
-            ];
-            
-            allAttendees = allAttendees.concat(mockAttendees);
-        });
+                
+            } catch (eventError) {
+                console.error(`Failed to fetch attendance for event ${event.name}:`, eventError);
+                // Continue with other events even if one fails
+            }
+        }
 
-        renderAttendeesTable(allAttendees);
+        if (allAttendees.length === 0) {
+            showError('No attendance data found for selected events');
+        } else {
+            console.log('Total attendees found:', allAttendees.length);
+            renderAttendeesTable(allAttendees);
+        }
         
     } catch (err) {
         showError('Failed to load attendees');
-        console.error(err);
+        console.error('Overall error:', err);
     } finally {
         hideSpinner();
     }
