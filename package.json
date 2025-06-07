@@ -4,7 +4,8 @@
   "description": "",
   "main": "https-server.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "node https-server.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +20,7 @@
   },
   "homepage": "https://github.com/simons-plugins/vikings-eventmgmt#readme",
   "dependencies": {
-    "@sentry/nextjs": "^9.27.0",
+    "@sentry/browser": "^7.120.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0"
   },

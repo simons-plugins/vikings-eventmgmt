@@ -144,3 +144,81 @@ tr:hover {
     white-space: normal;
     line-height: 1.2;
 }
+
+/* Better spacing for the main container */
+main.container {
+    padding-top: 1rem;
+}
+
+/* Improve card styling */
+.card {
+    border: none;
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+/* Better table styling */
+.table {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Responsive improvements */
+@media (max-width: 991.98px) {
+    .col-12.col-lg-4,
+    .col-12.col-lg-8 {
+        margin-bottom: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+    }
+}
+
+/* Improve button styling */
+.btn-block {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Better error message styling */
+#error-message {
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
+}

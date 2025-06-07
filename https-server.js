@@ -15,7 +15,12 @@ app.use(express.static(path.join(__dirname, 'src')));
 const PORT = process.env.PORT || 3000;
 const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
-// Local HTTPS for development, HTTP for production (Render handles HTTPS)
+// Debug output
+console.log('Environment variables:');
+console.log('PORT:', PORT);
+console.log('USE_HTTPS:', USE_HTTPS);
+console.log('process.env.USE_HTTPS:', process.env.USE_HTTPS);
+
 if (USE_HTTPS) {
   https.createServer({
     key: fs.readFileSync('./localhost-key.pem'),

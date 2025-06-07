@@ -20,40 +20,59 @@ const redirectUri = window.location.origin + '/callback.html';
 
 // Show login button only if not authenticated
 function showLoginOnly() {
-    document.getElementById('app-content').innerHTML = '';
-    document.getElementById('osm-login-btn').style.display = '';
+    const mainContainer = document.querySelector('main .row');
+    mainContainer.className = 'row justify-content-center';
+    mainContainer.innerHTML = `
+        <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <button id="osm-login-btn"
+                        class="btn btn-primary btn-lg w-100 mb-3"
+                        style="font-size:1.5em; white-space: normal; line-height: 1.2;">
+                        Login with<br>Online Scout Manager (OSM)
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // Show the main app UI after authentication
 function showMainUI() {
-    document.getElementById('osm-login-btn').style.display = 'none';
-    
-    // Replace the centered login layout with full-width app layout
     const mainContainer = document.querySelector('main .row');
     mainContainer.className = 'row';
     mainContainer.innerHTML = `
-        <div class="col-12 col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <button id="get-sections-btn" class="btn btn-secondary btn-block mb-3">Get Sections</button>
-                    <div id="sections-table-container"></div>
+        <div class="col-12 col-lg-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Sections & Events</h5>
                 </div>
-            </div>
-            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <div id="events-table-container"></div>
+                    <button id="get-sections-btn" class="btn btn-secondary btn-block mb-3">
+                        Get Sections
+                    </button>
+                    <div id="sections-table-container"></div>
+                    <div id="events-table-container" class="mt-3"></div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-md-8">
-            <div class="card shadow-sm mb-4">
+        <div class="col-12 col-lg-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Attendance Details</h5>
+                </div>
                 <div class="card-body">
-                    <div id="attendance-panel"></div>
+                    <div id="attendance-panel">
+                        <p class="text-muted text-center">
+                            Select events from the left panel to view attendance details.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     `;
 
+    // Re-attach event listener for the new button
     document.getElementById('get-sections-btn').addEventListener('click', async () => {
         showSpinner();
         try {
