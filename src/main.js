@@ -233,8 +233,28 @@ function initializeApp() {
     // Check if user is logged in
     const token = sessionStorage.getItem('access_token');
     if (token) {
-        showMainUI();
+        // Test if token is still valid by making a quick API call
+        validateTokenAndShowUI();
     } else {
+        showLoginOnly();
+    }
+}
+
+async function validateTokenAndShowUI() {
+    try {
+        // Make a quick API call to test the token
+        const roles = await getUserRoles();
+        if (roles && roles.length >= 0) {
+            // Token is valid, show main UI
+            showMainUI();
+        } else {
+            // Token invalid, show login
+            showLoginOnly();
+        }
+    } catch (error) {
+        console.log('Token validation failed:', error);
+        // Clear invalid token and show login
+        sessionStorage.removeItem('access_token');
         showLoginOnly();
     }
 }

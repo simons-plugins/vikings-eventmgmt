@@ -20,7 +20,10 @@ export function renderSectionsTable(sections, onLoadEvents) {
     }
     
     let html = `<table id="sections-table" class="table table-striped table-sm">
-        <tr><th>Select</th><th>Section Name</th></tr>`;
+        <tr>
+            <th style="width: 40px;"></th>
+            <th>Section Name</th>
+        </tr>`;
     
     sections.forEach(section => {
         html += `<tr>
@@ -49,50 +52,155 @@ export function renderEventsTable(events, onLoadAttendees) {
         document.getElementById('app-content').appendChild(container);
     }
 
-    let html = `<table id="events-table" class="table table-striped table-sm">
-        <tr>
-            <th>Select</th>
-            <th>Section</th>
-            <th>Name</th>
-            <th>Date</th>
-            <th>Yes</th>
-            <th>Yes Members</th>
-            <th>Yes YLs</th>
-            <th>Yes Leaders</th>
-            <th>No</th>
-        </tr>`;
+    // Mobile detection
+    const isMobile = window.innerWidth <= 767;
     
-    events.forEach((event, idx) => {
-        html += `<tr>
-            <td><input type="checkbox" class="event-checkbox" data-idx="${idx}" data-event='${JSON.stringify(event)}'></td>
-            <td>${event.sectionname || ''}</td>
-            <td>${event.name || ''}</td>
-            <td>${event.date || ''}</td>
-            <td>${event.yes || 0}</td>
-            <td>${event.yes_members || 0}</td>
-            <td>${event.yes_yls || 0}</td>
-            <td>${event.yes_leaders || 0}</td>
-            <td>${event.no || 0}</td>
-        </tr>`;
-    });
-
-    html += `</table>
-    <button id="load-attendees-btn" class="btn btn-primary btn-sm w-100">Show Attendees for Selected Events</button>`;
+    let html;
+    
+    if (isMobile) {
+        // Mobile expandable layout
+        html = `<div class="table-responsive">
+            <table id="events-table" class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <th>Event Details</th>
+                        <th style="width: 60px;">Total</th>
+                        <th style="width: 40px;">
+                            <i class="fas fa-expand-alt" title="Tap rows to expand"></i>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        events.forEach((event, idx) => {
+            const totalYes = (event.yes || 0);
+            const totalNo = (event.no || 0);
+            
+            html += `
+                <tr class="mobile-event-row" data-idx="${idx}" style="cursor: pointer;">
+                    <td><input type="checkbox" class="event-checkbox" data-idx="${idx}" onclick="event.stopPropagation();"></td>
+                    <td>
+                        <div class="fw-bold event-name">${event.name || ''}</div>
+                        <small class="text-muted">${event.sectionname || ''} • ${event.date || ''}</small>
+                    </td>
+                    <td class="text-center">
+                        <span class="text-success fw-bold">${totalYes}</span> / 
+                        <span class="text-danger">${totalNo}</span>
+                    </td>
+                    <td class="text-center">
+                        <i class="fas fa-chevron-down expand-icon" data-idx="${idx}"></i>
+                    </td>
+                </tr>
+                <tr class="mobile-details-row" id="details-${idx}" style="display: none;">
+                    <td colspan="4" class="bg-light">
+                        <div class="p-2">
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <small class="text-muted d-block">Members</small>
+                                    <strong class="text-success">${event.yes_members || 0}</strong>
+                                </div>
+                                <div class="col-3">
+                                    <small class="text-muted d-block">YLs</small>
+                                    <strong class="text-success">${event.yes_yls || 0}</strong>
+                                </div>
+                                <div class="col-3">
+                                    <small class="text-muted d-block">Leaders</small>
+                                    <strong class="text-success">${event.yes_leaders || 0}</strong>
+                                </div>
+                                <div class="col-3">
+                                    <small class="text-muted d-block">No</small>
+                                    <strong class="text-danger">${event.no || 0}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>`;
+        });
+        
+    } else {
+        // Desktop layout (your existing code)
+        html = `<div class="table-responsive">
+            <table id="events-table" class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <th style="min-width: 120px;">Section</th>
+                        <th style="min-width: 150px;">Event Name</th>
+                        <th style="min-width: 100px;">Date</th>
+                        <th style="min-width: 60px;">Yes</th>
+                        <th style="min-width: 80px;">Members</th>
+                        <th style="min-width: 60px;">YLs</th>
+                        <th style="min-width: 80px;">Leaders</th>
+                        <th style="min-width: 60px;">No</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        events.forEach((event, idx) => {
+            html += `<tr>
+                <td><input type="checkbox" class="event-checkbox" data-idx="${idx}"></td>
+                <td class="text-nowrap">${event.sectionname || ''}</td>
+                <td class="event-name-cell">${event.name || ''}</td>
+                <td class="text-nowrap">${event.date || ''}</td>
+                <td class="text-center">${event.yes || 0}</td>
+                <td class="text-center">${event.yes_members || 0}</td>
+                <td class="text-center">${event.yes_yls || 0}</td>
+                <td class="text-center">${event.yes_leaders || 0}</td>
+                <td class="text-center">${event.no || 0}</td>
+            </tr>`;
+        });
+    }
+    
+    html += `</tbody></table></div>
+        <button id="load-attendees-btn" class="btn btn-primary btn-sm w-100 mt-2">
+            Show Attendees for Selected Events
+        </button>`;
     
     container.innerHTML = html;
+    
+    // Add mobile expand functionality
+    if (isMobile) {
+        addMobileExpandFunctionality();
+    }
     
     // Store events data for the callback
     container.eventsData = events;
     
     document.getElementById('load-attendees-btn').onclick = () => {
-        // Get selected event indices
         const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
         const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
-        
-        // Call the callback with selected events data
         const selectedEvents = selectedIndices.map(idx => events[idx]);
         onLoadAttendees(selectedEvents);
     };
+}
+
+// Add the mobile expand functionality
+function addMobileExpandFunctionality() {
+    document.querySelectorAll('.mobile-event-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't expand if clicking checkbox
+            if (e.target.type === 'checkbox') return;
+            
+            const idx = this.dataset.idx;
+            const detailsRow = document.getElementById(`details-${idx}`);
+            const expandIcon = this.querySelector('.expand-icon');
+            
+            if (detailsRow.style.display === 'none') {
+                // Expand
+                detailsRow.style.display = '';
+                expandIcon.classList.remove('fa-chevron-down');
+                expandIcon.classList.add('fa-chevron-up');
+                this.classList.add('expanded');
+            } else {
+                // Collapse
+                detailsRow.style.display = 'none';
+                expandIcon.classList.remove('fa-chevron-up');
+                expandIcon.classList.add('fa-chevron-down');
+                this.classList.remove('expanded');
+            }
+        });
+    });
 }
 
 export function renderAttendeesTable(attendees) {

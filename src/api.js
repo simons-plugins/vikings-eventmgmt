@@ -4,6 +4,23 @@ export function getToken() {
     return sessionStorage.getItem('access_token'); // <-- changed
 }
 
+// Add token validation function:
+export function isTokenValid(responseData) {
+    // Check if the response indicates token expiration
+    if (responseData && responseData.status === false && 
+        responseData.error && responseData.error.code === 'access-error-2') {
+        return false;
+    }
+    return true;
+}
+
+export function handleTokenExpiration() {
+    // Clear expired token
+    sessionStorage.removeItem('access_token');
+    // Redirect to login
+    window.location.reload();
+}
+
 export async function getTermsForSection(sectionId) {
     const token = getToken();
     if (!token) return [];
@@ -23,6 +40,7 @@ export async function getMostRecentTermId(sectionId) {
     return terms[0].termid;
 }
 
+// Update your getUserRoles function to check for token expiration:
 export async function getUserRoles() {
     const token = getToken();
     const response = await fetch(`${BACKEND_URL}/get-user-roles`, {
@@ -30,7 +48,16 @@ export async function getUserRoles() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ access_token: token })
     });
-    return response.json();
+    
+    const data = await response.json();
+    
+    // Check for token expiration
+    if (!isTokenValid(data)) {
+        handleTokenExpiration();
+        return [];
+    }
+    
+    return data;
 }
 
 export async function getEvents(sectionid, termid) {
