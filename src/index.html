@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Viking Scouts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 4 CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://vikings-osm-event-manager.onrender.com https://www.onlinescoutmanager.co.uk;">
     <link rel="stylesheet" href="styles.css">
     <script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
@@ -11,25 +14,45 @@
     </script>
 </head>
 <body>
-    <header>
-        <h1>Viking Scouts</h1>
+    <header class="bg-primary text-white py-3 mb-4">
+        <div class="container">
+            <h1 class="h3 mb-0">Viking Scouts</h1>
+        </div>
     </header>
-    <main>
-        <div class="split-container">
-            <div class="left-panel">
-                <div class="login-container">
-                    <button id="osm-login-btn" class="main-btn">Login with OSM</button>
-                    <button id="get-sections-btn" class="main-btn" style="font-size:1.5em;padding:1em 2em;">Get Sections</button>
-                    <!-- Section dropdown and events table will be appended here -->
+    <main class="container">
+        <div class="row">
+            <!-- Left column: Sections and Events -->
+            <div class="col-12 col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <button id="osm-login-btn" class="btn btn-primary btn-block mb-3">Login with OSM</button>
+                        <button id="get-sections-btn" class="btn btn-secondary btn-block mb-3" style="font-size:1.2em;">Get Sections</button>
+                        <!-- Section selection -->
+                        <div id="sections-table-container"></div>
+                    </div>
+                </div>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <!-- Events selection -->
+                        <div id="events-table-container"></div>
+                    </div>
                 </div>
             </div>
-            <div class="right-panel">
-                <div id="attendance-panel"></div>
+            <!-- Right column: Attendees -->
+            <div class="col-12 col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div id="attendance-panel"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
-    <div id="error-message" style="display:none;color:red;text-align:center;margin:1em 0;"></div>
-    <div id="spinner" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;">⏳ Loading...</div>
+    <div id="error-message" class="alert alert-danger text-center" style="display:none;margin:1em 0;"></div>
+    <div id="spinner" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;z-index:9999;">⏳ Loading...</div>
+    <!-- Bootstrap 4 JS and dependencies (optional, for dropdowns/modals) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="main.js"></script>
 </body>
 </html>
