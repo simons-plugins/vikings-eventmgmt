@@ -2,7 +2,8 @@ import {
     getUserRoles,
     getMostRecentTermId,
     getEvents,
-    getEventAttendance
+    getEventAttendance,
+    getToken
 } from './api.js';
 import {
     showSpinner,
@@ -23,8 +24,22 @@ document.getElementById('osm-login-btn').addEventListener('click', function () {
     window.location.href = authUrl;
 });
 
-// Get sections button
-document.getElementById('get-sections-btn').addEventListener('click', getSections);
+function showGetSectionsButton() {
+    document.getElementById('app-content').innerHTML = `
+        <button id="get-sections-btn" class="btn btn-secondary btn-block mb-3" style="font-size:1.2em;">Get Sections</button>
+        <div id="sections-table-container"></div>
+        <div id="events-table-container"></div>
+        <div id="attendance-panel"></div>
+    `;
+    document.getElementById('get-sections-btn').addEventListener('click', getSections);
+}
+
+// On page load:
+if (getToken()) {
+    showGetSectionsButton();
+} else {
+    // Only login button is visible
+}
 
 async function getSections() {
     showSpinner();
