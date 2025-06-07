@@ -58,14 +58,14 @@ export function renderEventsTable(events, onLoadAttendees) {
     let html;
     
     if (isMobile) {
-        // Mobile expandable layout
+        // Mobile expandable layout - reorder columns
         html = `<div class="table-responsive">
             <table id="events-table" class="table table-striped table-sm">
                 <thead>
                     <tr>
                         <th style="width: 40px;"></th>
+                        <th style="width: 70px;" class="text-center">Total</th>
                         <th>Event Details</th>
-                        <th style="width: 60px;">Total</th>
                         <th style="width: 40px;">
                             <i class="fas fa-expand-alt" title="Tap rows to expand"></i>
                         </th>
@@ -80,13 +80,15 @@ export function renderEventsTable(events, onLoadAttendees) {
             html += `
                 <tr class="mobile-event-row" data-idx="${idx}" style="cursor: pointer;">
                     <td><input type="checkbox" class="event-checkbox" data-idx="${idx}" onclick="event.stopPropagation();"></td>
-                    <td>
+                    <td class="text-center total-column">
+                        <div class="d-flex flex-column">
+                            <span class="text-success fw-bold">${totalYes}</span>
+                            <span class="text-danger small">${totalNo}</span>
+                        </div>
+                    </td>
+                    <td class="event-details-column">
                         <div class="fw-bold event-name">${event.name || ''}</div>
                         <small class="text-muted">${event.sectionname || ''} • ${event.date || ''}</small>
-                    </td>
-                    <td class="text-center">
-                        <span class="text-success fw-bold">${totalYes}</span> / 
-                        <span class="text-danger">${totalNo}</span>
                     </td>
                     <td class="text-center">
                         <i class="fas fa-chevron-down expand-icon" data-idx="${idx}"></i>
@@ -220,16 +222,42 @@ export function renderAttendeesTable(attendees) {
         return;
     }
 
-    // Get unique sections and events for filters
+    // Group attendees by person (first + last name)
+    const attendeesByPerson = {};
+    attendees.forEach(attendee => {
+        const personKey = `${attendee.firstname} ${attendee.lastname}`;
+        if (!attendeesByPerson[personKey]) {
+            attendeesByPerson[personKey] = {
+                firstname: attendee.firstname,
+                lastname: attendee.lastname,
+                events: [],
+                totalYes: 0,
+                totalNo: 0
+            };
+        }
+        
+        attendeesByPerson[personKey].events.push(attendee);
+        if (attendee.attending === 'Yes') {
+            attendeesByPerson[personKey].totalYes++;
+        } else {
+            attendeesByPerson[personKey].totalNo++;
+        }
+    });
+
+    // Get unique values for filters
     const uniqueSections = [...new Set(attendees.map(a => a.sectionname))];
     const uniqueEvents = [...new Set(attendees.map(a => a._eventName))];
     const uniqueStatuses = [...new Set(attendees.map(a => a.attending))];
+
+    // Check if mobile
+    const isMobile = window.innerWidth <= 767;
 
     let html = `
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Attendance Details</h5>
             <small class="text-muted">
-                <span id="attendee-count">${attendees.length}</span> attendee(s)
+                <span id="attendee-count">${Object.keys(attendeesByPerson).length}</span> person(s), 
+                <span id="event-count">${attendees.length}</span> event record(s)
             </small>
         </div>
         
@@ -269,99 +297,201 @@ export function renderAttendeesTable(attendees) {
         
         <!-- Attendance Table -->
         <div class="table-responsive">
-            <table id="attendance-table" class="table table-striped table-sm">
-                <thead class="table-dark">
+            <table id="attendance-table" class="table table-striped table-sm">`;
+
+    if (isMobile) {
+        // Mobile layout
+        html += `
+                <thead>
                     <tr>
-                        <th>Section</th>
-                        <th>Event</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Attending</th>
+                        <th style="width: 70px;" class="text-center">Status</th>
+                        <th>Name</th>
+                        <th style="width: 40px;" class="text-center">▼</th>
                     </tr>
                 </thead>
                 <tbody id="attendance-tbody">`;
-    
-    attendees.forEach((attendee, index) => {
-        const attendingClass = attendee.attending === 'Yes' ? 'text-success' : 'text-danger';
+    } else {
+        // Desktop layout
         html += `
-            <tr data-index="${index}">
-                <td>${attendee.sectionname || ''}</td>
-                <td>${attendee._eventName || ''}</td>
-                <td>${attendee.firstname || ''}</td>
-                <td>${attendee.lastname || ''}</td>
-                <td class="${attendingClass}">
-                    <strong>${attendee.attending || ''}</strong>
+                <thead>
+                    <tr>
+                        <th style="width: 80px;" class="text-center">Attending</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th style="width: 40px;" class="text-center">▼</th>
+                    </tr>
+                </thead>
+                <tbody id="attendance-tbody">`;
+    }
+
+    // Generate person rows
+    Object.entries(attendeesByPerson).forEach(([personKey, person], personIdx) => {
+        if (isMobile) {
+            html += `
+                <tr class="person-row" data-person-idx="${personIdx}" style="cursor: pointer;">
+                    <td class="text-center total-column">
+                        <div class="d-flex flex-column">
+                            <span class="text-success fw-bold">${person.totalYes}</span>
+                            <span class="text-danger small">${person.totalNo}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">${person.firstname} ${person.lastname}</div>
+                        <small class="text-muted">${person.events.length} event(s)</small>
+                    </td>
+                    <td class="text-center">
+                        <span class="expand-icon">▼</span>
+                    </td>
+                </tr>`;
+        } else {
+            html += `
+                <tr class="person-row" data-person-idx="${personIdx}" style="cursor: pointer;">
+                    <td class="text-center">
+                        <span class="text-success fw-bold">${person.totalYes}</span> / 
+                        <span class="text-danger">${person.totalNo}</span>
+                    </td>
+                    <td>${person.firstname}</td>
+                    <td>${person.lastname}</td>
+                    <td class="text-center">
+                        <span class="expand-icon">▼</span>
+                    </td>
+                </tr>`;
+        }
+
+        // Add expandable details row
+        html += `
+            <tr class="person-details-row" id="person-details-${personIdx}" style="display: none;">
+                <td colspan="${isMobile ? 3 : 4}" class="bg-light p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="bg-secondary text-white">
+                                <tr>
+                                    <th class="small">Section</th>
+                                    <th class="small">Event</th>
+                                    <th class="small text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+        // Add event details for this person
+        person.events.forEach(event => {
+            const statusClass = event.attending === 'Yes' ? 'text-success' : 'text-danger';
+            html += `
+                <tr>
+                    <td class="small">${event.sectionname || ''}</td>
+                    <td class="small">${event._eventName || ''}</td>
+                    <td class="small text-center ${statusClass}">
+                        <strong>${event.attending || ''}</strong>
+                    </td>
+                </tr>`;
+        });
+
+        html += `
+                            </tbody>
+                        </table>
+                    </div>
                 </td>
             </tr>`;
     });
-    
+
     html += `
                 </tbody>
             </table>
         </div>
     `;
-    
+
     container.innerHTML = html;
 
-    // Store attendees data for filtering
-    container.attendeesData = attendees;
-
-    // Add filter functionality
-    addFilterFunctionality();
+    // Add expand functionality
+    addPersonExpandFunctionality();
+    
+    // Add filtering functionality (update the existing filter functions to work with grouped data)
+    addAttendeeFiltering(attendeesByPerson, attendees);
 }
 
-// Add the filtering functionality
-function addFilterFunctionality() {
+// Add the person expand functionality
+function addPersonExpandFunctionality() {
+    document.querySelectorAll('.person-row').forEach(row => {
+        row.addEventListener('click', function() {
+            const personIdx = this.dataset.personIdx;
+            const detailsRow = document.getElementById(`person-details-${personIdx}`);
+            const expandIcon = this.querySelector('.expand-icon');
+            
+            if (detailsRow.style.display === 'none') {
+                // Expand
+                detailsRow.style.display = '';
+                expandIcon.textContent = '▲';
+                this.classList.add('expanded');
+            } else {
+                // Collapse
+                detailsRow.style.display = 'none';
+                expandIcon.textContent = '▼';
+                this.classList.remove('expanded');
+            }
+        });
+    });
+}
+
+// Update filtering to work with grouped data
+function addAttendeeFiltering(attendeesByPerson, originalAttendees) {
     const sectionFilter = document.getElementById('section-filter');
     const eventFilter = document.getElementById('event-filter');
     const statusFilter = document.getElementById('status-filter');
     const nameFilter = document.getElementById('name-filter');
-    const clearFiltersBtn = document.getElementById('clear-filters-btn');
-    const attendeeCount = document.getElementById('attendee-count');
+    const clearButton = document.getElementById('clear-filters-btn');
 
     function applyFilters() {
-        const container = document.getElementById('attendance-panel');
-        const allAttendees = container.attendeesData;
-        
         const sectionValue = sectionFilter.value.toLowerCase();
         const eventValue = eventFilter.value.toLowerCase();
         const statusValue = statusFilter.value.toLowerCase();
         const nameValue = nameFilter.value.toLowerCase();
 
-        const rows = document.querySelectorAll('#attendance-tbody tr');
         let visibleCount = 0;
 
-        rows.forEach((row, index) => {
-            const attendee = allAttendees[index];
+        document.querySelectorAll('.person-row').forEach(row => {
+            const personIdx = row.dataset.personIdx;
+            const personKey = Object.keys(attendeesByPerson)[personIdx];
+            const person = attendeesByPerson[personKey];
             
-            const matchesSection = !sectionValue || (attendee.sectionname || '').toLowerCase().includes(sectionValue);
-            const matchesEvent = !eventValue || (attendee._eventName || '').toLowerCase().includes(eventValue);
-            const matchesStatus = !statusValue || (attendee.attending || '').toLowerCase().includes(statusValue);
-            const matchesName = !nameValue || 
-                (attendee.firstname || '').toLowerCase().includes(nameValue) ||
-                (attendee.lastname || '').toLowerCase().includes(nameValue);
+            // Check if person matches filters
+            const nameMatch = !nameValue || 
+                (person.firstname.toLowerCase().includes(nameValue) || 
+                 person.lastname.toLowerCase().includes(nameValue));
+                 
+            // Check if any of their events match section/event/status filters
+            const eventsMatch = person.events.some(event => {
+                const sectionMatch = !sectionValue || event.sectionname.toLowerCase().includes(sectionValue);
+                const eventMatch = !eventValue || event._eventName.toLowerCase().includes(eventValue);
+                const statusMatch = !statusValue || event.attending.toLowerCase().includes(statusValue);
+                
+                return sectionMatch && eventMatch && statusMatch;
+            });
 
-            const isVisible = matchesSection && matchesEvent && matchesStatus && matchesName;
-            
-            row.style.display = isVisible ? '' : 'none';
-            if (isVisible) visibleCount++;
+            if (nameMatch && eventsMatch) {
+                row.style.display = '';
+                document.getElementById(`person-details-${personIdx}`).style.display = 'none';
+                row.classList.remove('expanded');
+                row.querySelector('.expand-icon').textContent = '▼';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+                document.getElementById(`person-details-${personIdx}`).style.display = 'none';
+            }
         });
 
-        attendeeCount.textContent = visibleCount;
-    }
-
-    function clearFilters() {
-        sectionFilter.value = '';
-        eventFilter.value = '';
-        statusFilter.value = '';
-        nameFilter.value = '';
-        applyFilters();
+        document.getElementById('attendee-count').textContent = visibleCount;
     }
 
     // Add event listeners
-    sectionFilter.addEventListener('change', applyFilters);
-    eventFilter.addEventListener('change', applyFilters);
-    statusFilter.addEventListener('change', applyFilters);
-    nameFilter.addEventListener('input', applyFilters);
-    clearFiltersBtn.addEventListener('click', clearFilters);
+    [sectionFilter, eventFilter, statusFilter, nameFilter].forEach(filter => {
+        filter.addEventListener('change', applyFilters);
+        filter.addEventListener('input', applyFilters);
+    });
+
+    clearButton.addEventListener('click', () => {
+        [sectionFilter, eventFilter, statusFilter, nameFilter].forEach(filter => {
+            filter.value = '';
+        });
+        applyFilters();
+    });
 }

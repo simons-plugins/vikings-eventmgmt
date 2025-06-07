@@ -8,14 +8,21 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Content Security Policy for Bootstrap and APIs -->
-    <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self';
-               connect-src 'self' https://vikings-osm-event-manager.onrender.com https://www.onlinescoutmanager.co.uk;
-               style-src 'self' https://stackpath.bootstrapcdn.com 'unsafe-inline';
-               script-src 'self' https://browser.sentry-cdn.com https://code.jquery.com https://cdn.jsdelivr.net 'unsafe-inline';">
+    
+    <!-- Simplified CSP -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com;
+        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com;
+        font-src 'self' https://cdnjs.cloudflare.com data:;
+        img-src 'self' data: https:;
+        connect-src 'self' https://vikings-osm-event-manager.onrender.com https://www.onlinescoutmanager.co.uk;
+        frame-src 'self' https://www.onlinescoutmanager.co.uk;
+    ">
+    
     <link rel="stylesheet" href="styles.css">
-    <!-- Sentry contect -->
+    
+    <!-- Sentry -->
     <script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
     <script>
       Sentry.init({ dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544' });
@@ -45,9 +52,7 @@
     </main>
     <div id="error-message" class="alert alert-danger text-center" style="display:none;margin:1em 0;"></div>
     <div id="spinner" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;z-index:9999;">⏳ Loading...</div>
-    <!-- Bootstrap 4 JS and dependencies (optional, for dropdowns/modals) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Only your main script -->
     <script type="module" src="main.js"></script>
 </body>
 </html>

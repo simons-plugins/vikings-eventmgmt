@@ -205,6 +205,72 @@ tr:hover {
     .mobile-details-row .col-3 {
         padding: 0.25rem;
     }
+
+    /* Mobile table improvements */
+    /* Keep the total column visible and compact */
+    .total-column {
+        min-width: 60px !important;
+        max-width: 70px !important;
+        padding: 0.3rem !important;
+    }
+    
+    .total-column .d-flex {
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+    }
+    
+    .total-column .text-success {
+        font-size: 1rem;
+        line-height: 1;
+    }
+    
+    .total-column .text-danger {
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+    
+    /* Event details column should be flexible */
+    .event-details-column {
+        min-width: 0; /* Allow shrinking */
+        width: 100%; /* Take remaining space */
+    }
+    
+    .event-name {
+        font-size: 0.9rem;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px; /* Prevent too much expansion */
+    }
+    
+    /* Ensure table fits viewport without horizontal scroll for key columns */
+    #events-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    /* Column widths */
+    #events-table th:nth-child(1), /* Checkbox */
+    #events-table td:nth-child(1) {
+        width: 40px;
+    }
+    
+    #events-table th:nth-child(2), /* Total */
+    #events-table td:nth-child(2) {
+        width: 70px;
+    }
+    
+    #events-table th:nth-child(3), /* Event details */
+    #events-table td:nth-child(3) {
+        width: calc(100% - 150px); /* Remaining space */
+    }
+    
+    #events-table th:nth-child(4), /* Expand icon */
+    #events-table td:nth-child(4) {
+        width: 40px;
+    }
 }
 
 #osm-login-btn {
