@@ -43,22 +43,32 @@ export async function getEvents(sectionid, termid) {
     return resp.json();
 }
 
-export async function getEventAttendance(sectionId, eventId) {
+export async function getEventAttendance(sectionId, eventId, termId) {
     const token = getToken();
     if (!token) throw new Error('No access token');
 
-    const url = `${BACKEND_URL}/api/events/${sectionId}/${eventId}/attendance`;
-    
-    const response = await fetch(url, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
+    console.log('API call with params:', { sectionId, eventId, termId });
+
+    const response = await fetch(`${BACKEND_URL}/get-event-attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            access_token: token, 
+            sectionid: sectionId, 
+            eventid: eventId,
+            termid: termId  // Add the missing termid parameter
+        })
     });
 
+    console.log('API response status:', response.status);
+
     if (!response.ok) {
-        throw new Error(`Failed to fetch event attendance: ${response.status}`);
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`Failed to fetch event attendance: ${response.status} - ${errorText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('API response data:', data);
+    return data;
 }

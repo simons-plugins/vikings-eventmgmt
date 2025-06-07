@@ -154,7 +154,7 @@ async function handleSectionSelect(selectedSectionIds) {
     }
 }
 
-// Update handleEventSelect to use real API data:
+// Update your handleEventSelect with more detailed logging:
 async function handleEventSelect(selectedEvents) {
     if (!selectedEvents || selectedEvents.length === 0) {
         showError('Please select at least one event');
@@ -165,50 +165,53 @@ async function handleEventSelect(selectedEvents) {
     try {
         let allAttendees = [];
         
-        // Process each selected event and fetch real attendance data
         for (const event of selectedEvents) {
             try {
-                console.log('Fetching attendance for event:', event.eventid, event.name);
+                console.log('Processing event:', {
+                    eventid: event.eventid,
+                    sectionid: event.sectionid,
+                    termid: event.termid, // Make sure this exists
+                    name: event.name
+                });
                 
-                // Use the actual API to get attendance data
-                const attendanceData = await getEventAttendance(event.sectionid, event.eventid);
+                // Get termid for the event (if not already in event object)
+                let termId = event.termid;
+                if (!termId) {
+                    termId = await getMostRecentTermId(event.sectionid);
+                }
                 
-                console.log('Attendance data received:', attendanceData);
+                const attendanceData = await getEventAttendance(event.sectionid, event.eventid, termId);
                 
-                // Process the attendance data
-                if (attendanceData && attendanceData.items) {
+                console.log('Raw attendance data:', attendanceData);
+                
+                if (attendanceData && attendanceData.items && attendanceData.items.length > 0) {
                     const eventAttendees = attendanceData.items.map(attendee => ({
                         ...attendee,
                         sectionname: event.sectionname,
                         _eventName: event.name,
                         _eventDate: event.date
                     }));
-                    
                     allAttendees = allAttendees.concat(eventAttendees);
-                } else if (attendanceData && Array.isArray(attendanceData)) {
-                    // Handle case where attendanceData is directly an array
+                } else if (attendanceData && Array.isArray(attendanceData) && attendanceData.length > 0) {
                     const eventAttendees = attendanceData.map(attendee => ({
                         ...attendee,
                         sectionname: event.sectionname,
                         _eventName: event.name,
                         _eventDate: event.date
                     }));
-                    
                     allAttendees = allAttendees.concat(eventAttendees);
                 } else {
-                    console.warn('No attendance data found for event:', event.name);
+                    console.warn('No attendance data found for event:', event.name, attendanceData);
                 }
                 
             } catch (eventError) {
                 console.error(`Failed to fetch attendance for event ${event.name}:`, eventError);
-                // Continue with other events even if one fails
             }
         }
 
         if (allAttendees.length === 0) {
             showError('No attendance data found for selected events');
         } else {
-            console.log('Total attendees found:', allAttendees.length);
             renderAttendeesTable(allAttendees);
         }
         
