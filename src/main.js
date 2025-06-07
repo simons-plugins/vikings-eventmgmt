@@ -70,7 +70,7 @@ function showMainUI() {
                     <h5 class="mb-0">Sections & Events</h5>
                 </div>
                 <div class="card-body">
-                    <button id="get-sections-btn" class="btn btn-secondary btn-block mb-3">
+                    <button id="get-sections-btn" class="btn btn-primary btn-block mb-3">
                         Get Sections
                     </button>
                     <div id="sections-table-container"></div>

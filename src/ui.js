@@ -14,13 +14,12 @@ export function showError(msg) {
 export function renderSectionsTable(sections, onLoadEvents) {
     let container = document.getElementById('sections-table-container');
     if (!container) {
-        // Use the app-content or create the container properly
         container = document.createElement('div');
         container.id = 'sections-table-container';
         document.getElementById('app-content').appendChild(container);
     }
     
-    let html = `<table id="sections-table" class="table table-striped">
+    let html = `<table id="sections-table" class="table table-striped table-sm">
         <tr><th>Select</th><th>Section Name</th></tr>`;
     
     sections.forEach(section => {
@@ -29,15 +28,16 @@ export function renderSectionsTable(sections, onLoadEvents) {
             <td>${section.sectionname}</td>
         </tr>`;
     });
-    
+
     html += `</table>
-    <button id="load-events-btn" class="btn btn-primary">Load Events</button>`;
+    <button id="load-events-btn" class="btn btn-primary btn-sm w-100">Load Events</button>`;
     
     container.innerHTML = html;
     
     document.getElementById('load-events-btn').onclick = () => {
-        const selected = Array.from(document.querySelectorAll('.section-checkbox:checked')).map(cb => cb.value);
-        onLoadEvents(selected);
+        const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
+        const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+        onLoadEvents(selectedSectionIds);
     };
 }
 
@@ -49,7 +49,7 @@ export function renderEventsTable(events, onLoadAttendees) {
         document.getElementById('app-content').appendChild(container);
     }
 
-    let html = `<table id="events-table" class="table table-striped">
+    let html = `<table id="events-table" class="table table-striped table-sm">
         <tr>
             <th>Select</th>
             <th>Section</th>
@@ -77,7 +77,7 @@ export function renderEventsTable(events, onLoadAttendees) {
     });
 
     html += `</table>
-    <button id="load-attendees-btn" class="btn btn-primary">Show Attendees for Selected Events</button>`;
+    <button id="load-attendees-btn" class="btn btn-primary btn-sm w-100">Show Attendees for Selected Events</button>`;
     
     container.innerHTML = html;
     
