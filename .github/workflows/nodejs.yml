@@ -25,8 +25,11 @@ jobs:
         run: npm test
 
       # Optionally, run Cypress E2E tests
-      # - name: Run Cypress tests
-      #   uses: cypress-io/github-action@v6
+      #
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        env:  
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       # Optionally, deploy to Render or another host
       # (see Render docs for deployment via GitHub Actions)
