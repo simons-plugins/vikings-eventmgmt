@@ -66,7 +66,7 @@ function showMainUI() {
     mainContainer.innerHTML = `
         <div class="col-12 col-lg-4 mb-4">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-info text-white">
                     <h5 class="mb-0">Sections & Events</h5>
                 </div>
                 <div class="card-body">
