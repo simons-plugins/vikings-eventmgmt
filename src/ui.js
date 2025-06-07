@@ -64,7 +64,7 @@ export function renderEventsTable(events, onLoadAttendees) {
     
     events.forEach((event, idx) => {
         html += `<tr>
-            <td><input type="checkbox" class="event-checkbox" data-idx="${idx}"></td>
+            <td><input type="checkbox" class="event-checkbox" data-idx="${idx}" data-event='${JSON.stringify(event)}'></td>
             <td>${event.sectionname || ''}</td>
             <td>${event.name || ''}</td>
             <td>${event.date || ''}</td>
@@ -81,8 +81,17 @@ export function renderEventsTable(events, onLoadAttendees) {
     
     container.innerHTML = html;
     
+    // Store events data for the callback
+    container.eventsData = events;
+    
     document.getElementById('load-attendees-btn').onclick = () => {
-        onLoadAttendees(); // Use the passed callback function
+        // Get selected event indices
+        const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
+        const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
+        
+        // Call the callback with selected events data
+        const selectedEvents = selectedIndices.map(idx => events[idx]);
+        onLoadAttendees(selectedEvents);
     };
 }
 

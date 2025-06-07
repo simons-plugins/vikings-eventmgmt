@@ -18,6 +18,8 @@ const clientId = '98YWRWrOQyUVAlJuPHs8AdsbVg2mUCQO';
 const scope = 'section:member:read section:programme:read section:event:read';
 const redirectUri = window.location.origin + '/callback.html';
 
+let currentSections = [];
+
 // Show login button only if not authenticated
 function showLoginOnly() {
     console.log('showLoginOnly called'); // Debug
@@ -97,6 +99,7 @@ function showMainUI() {
         showSpinner();
         try {
             const roles = await getUserRoles();
+            currentSections = roles; // Store sections globally
             renderSectionsTable(roles, handleSectionSelect);
         } catch (err) {
             showError('Failed to load sections');
@@ -117,13 +120,25 @@ async function handleSectionSelect(selectedSectionIds) {
     try {
         let allEvents = [];
         
+        // Create a mapping of sectionId to sectionName from stored data
+        const sectionIdToName = {};
+        currentSections.forEach(section => {
+            sectionIdToName[section.sectionid] = section.sectionname;
+        });
+        
         // Fetch events for each selected section
         for (const sectionId of selectedSectionIds) {
             const termId = await getMostRecentTermId(sectionId);
             if (termId) {
                 const events = await getEvents(sectionId, termId);
                 if (events.items) {
-                    allEvents = allEvents.concat(events.items);
+                    // Add section name to each event
+                    const eventsWithSectionName = events.items.map(event => ({
+                        ...event,
+                        sectionname: sectionIdToName[sectionId] || 'Unknown Section',
+                        sectionid: sectionId
+                    }));
+                    allEvents = allEvents.concat(eventsWithSectionName);
                 }
             }
         }
@@ -139,12 +154,9 @@ async function handleSectionSelect(selectedSectionIds) {
     }
 }
 
-// ONLY ONE handleEventSelect function - this one handles the UI directly
-async function handleEventSelect() {
-    // Get selected event checkboxes
-    const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
-    
-    if (selectedCheckboxes.length === 0) {
+// Update handleEventSelect to accept selected events:
+async function handleEventSelect(selectedEvents) {
+    if (!selectedEvents || selectedEvents.length === 0) {
         showError('Please select at least one event');
         return;
     }
@@ -153,31 +165,21 @@ async function handleEventSelect() {
     try {
         let allAttendees = [];
         
-        // Get event data from the table rows
-        selectedCheckboxes.forEach(checkbox => {
-            const row = checkbox.closest('tr');
-            const cells = row.querySelectorAll('td');
-            
-            // Extract event info from the table row
-            const eventInfo = {
-                section: cells[1].textContent,
-                name: cells[2].textContent,
-                date: cells[3].textContent
-            };
-            
+        // Process each selected event
+        selectedEvents.forEach(event => {
             // For now, create mock attendee data
             // TODO: Replace with actual API call to get attendees
             const mockAttendees = [
                 { 
-                    sectionname: eventInfo.section, 
-                    _eventName: eventInfo.name, 
+                    sectionname: event.sectionname || 'Unknown Section', 
+                    _eventName: event.name || 'Unknown Event', 
                     firstname: 'John', 
                     lastname: 'Smith', 
                     attending: 'Yes' 
                 },
                 { 
-                    sectionname: eventInfo.section, 
-                    _eventName: eventInfo.name, 
+                    sectionname: event.sectionname || 'Unknown Section', 
+                    _eventName: event.name || 'Unknown Event', 
                     firstname: 'Jane', 
                     lastname: 'Doe', 
                     attending: 'No' 
