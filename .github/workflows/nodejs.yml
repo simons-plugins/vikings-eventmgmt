@@ -17,19 +17,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install  # Changed from npm ci
 
       - name: Run unit tests
         run: npm test
 
-      # Optionally, run Cypress E2E tests
-      #
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
+        with:
+          start: npm start
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          browser: chrome
         env:  
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          CYPRESS_baseUrl: http://localhost:3000
 
       # Optionally, deploy to Render or another host
       # (see Render docs for deployment via GitHub Actions)
