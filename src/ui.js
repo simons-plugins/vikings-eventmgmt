@@ -14,20 +14,27 @@ export function showError(msg) {
 export function renderSectionsTable(sections, onLoadEvents) {
     let container = document.getElementById('sections-table-container');
     if (!container) {
+        // Use the app-content or create the container properly
         container = document.createElement('div');
         container.id = 'sections-table-container';
-        document.querySelector('.login-container').appendChild(container);
+        document.getElementById('app-content').appendChild(container);
     }
-    let html = `<table id="sections-table"><tr><th>Select</th><th>Section Name</th></tr>`;
+    
+    let html = `<table id="sections-table" class="table table-striped">
+        <tr><th>Select</th><th>Section Name</th></tr>`;
+    
     sections.forEach(section => {
         html += `<tr>
             <td><input type="checkbox" class="section-checkbox" value="${section.sectionid}"></td>
             <td>${section.sectionname}</td>
         </tr>`;
     });
+    
     html += `</table>
-    <button id="load-events-btn">Load Events</button>`;
+    <button id="load-events-btn" class="btn btn-primary">Load Events</button>`;
+    
     container.innerHTML = html;
+    
     document.getElementById('load-events-btn').onclick = () => {
         const selected = Array.from(document.querySelectorAll('.section-checkbox:checked')).map(cb => cb.value);
         onLoadEvents(selected);
