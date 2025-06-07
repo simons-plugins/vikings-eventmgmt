@@ -1,8 +1,13 @@
-require('dotenv').config();
-const https = require('https');
-const fs = require('fs');
-const express = require('express');
-const path = require('path');
+import 'dotenv/config';
+import https from 'https';
+import fs from 'fs';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// __dirname replacement for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'src')));

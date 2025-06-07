@@ -12,12 +12,7 @@ header {
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-main {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 70vh;
-}
+
 
 .login-container {
     background: #fff;
@@ -127,4 +122,25 @@ tr:hover {
 
 #attendance-table {
     margin-top: 0.5em;
+}
+
+@media (max-width: 767.98px) {
+    .split-container {
+        flex-direction: column;
+        gap: 1em;
+    }
+    .left-panel, .right-panel {
+        margin: 0.5em 0;
+        padding: 1em;
+        border-radius: 10px;
+    }
+    .login-container {
+        padding: 1.2rem 0.8rem;
+    }
+}
+
+#osm-login-btn {
+    font-size: 1.5em;
+    white-space: normal;
+    line-height: 1.2;
 }
