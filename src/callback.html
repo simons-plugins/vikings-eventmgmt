@@ -3,18 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <title>OSM Auth Callback</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS for styling -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
-    <h1>Authenticating...</h1>
+    <div class="auth-container">
+        <div class="card shadow-sm" style="max-width: 500px; width: 100%;">
+            <div class="card-body text-center p-5">
+                <div class="spinner mb-4"></div>
+                <h2 class="h4 mb-3">Authenticating with OSM...</h2>
+                <p class="text-muted mb-4">
+                    Please wait while we securely connect to Online Scout Manager.<br>
+                    <strong>This may take up to a minute.</strong>
+                </p>
+                <div id="status-message" class="small text-info">
+                    Exchanging authorization code...
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com'; // <-- Set your Render backend URL here
-        // If using local development, you can set it to:
-        //const BACKEND_URL = 'https://localhost:3000'; // <-- Set your Render backend URL here
+        const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+        //const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+        
+        function updateStatus(message) {
+            document.getElementById('status-message').textContent = message;
+        }
 
         // Get the ?code=... from the URL
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
+        
         if (code) {
+            updateStatus('Contacting authentication server...');
+            
+            // Add a timeout warning
+            const timeoutWarning = setTimeout(() => {
+                updateStatus('Still processing... OSM servers may be responding slowly.');
+            }, 10000); // Show after 10 seconds
+            
             // Exchange code for access token via backend
             fetch(`${BACKEND_URL}/exchange-token`, {
                 method: 'POST',
@@ -24,18 +77,50 @@
                     redirect_uri: window.location.origin + '/callback.html'
                 })
             })
-            .then(res => res.json())
+            .then(res => {
+                clearTimeout(timeoutWarning);
+                updateStatus('Processing response...');
+                return res.json();
+            })
             .then(data => {
                 console.log('Token exchange response:', data);
                 if (data.access_token) {
-                    sessionStorage.setItem('access_token', data.access_token); // <-- changed
-                    window.location.href = 'index.html';
+                    updateStatus('Authentication successful! Redirecting...');
+                    sessionStorage.setItem('access_token', data.access_token);
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
                 } else {
-                    document.body.innerHTML = '<h1>Authentication failed.</h1><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    clearTimeout(timeoutWarning);
+                    document.querySelector('.card-body').innerHTML = `
+                        <h2 class="h4 text-danger mb-3">Authentication Failed</h2>
+                        <p class="text-muted mb-4">There was an error during authentication.</p>
+                        <details class="text-left">
+                            <summary>Error Details</summary>
+                            <pre class="small mt-2">${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                        <a href="index.html" class="btn btn-primary mt-3">Try Again</a>
+                    `;
                 }
+            })
+            .catch(error => {
+                clearTimeout(timeoutWarning);
+                console.error('Auth error:', error);
+                document.querySelector('.card-body').innerHTML = `
+                    <h2 class="h4 text-danger mb-3">Connection Error</h2>
+                    <p class="text-muted mb-4">
+                        Unable to connect to the authentication server.<br>
+                        This could be due to slow network or server issues.
+                    </p>
+                    <a href="index.html" class="btn btn-primary">Try Again</a>
+                `;
             });
         } else {
-            document.body.innerHTML = '<h1>No code found in URL.</h1>';
+            document.querySelector('.card-body').innerHTML = `
+                <h2 class="h4 text-danger mb-3">Invalid Callback</h2>
+                <p class="text-muted mb-4">No authorization code found in the URL.</p>
+                <a href="index.html" class="btn btn-primary">Return to Home</a>
+            `;
         }
     </script>
 </body>

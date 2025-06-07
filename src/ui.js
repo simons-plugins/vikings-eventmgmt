@@ -82,8 +82,7 @@ export function renderEventsTable(events, onLoadAttendees) {
     container.innerHTML = html;
     
     document.getElementById('load-attendees-btn').onclick = () => {
-        const selected = Array.from(document.querySelectorAll('.event-checkbox:checked')).map(cb => parseInt(cb.dataset.idx));
-        onLoadAttendees(selected);
+        onLoadAttendees(); // Use the passed callback function
     };
 }
 
@@ -95,25 +94,52 @@ export function renderAttendeesTable(attendees) {
         document.getElementById('app-content').appendChild(container);
     }
 
-    let html = `<table id="attendance-table" class="table table-striped">
-        <tr>
-            <th>Section</th>
-            <th>Event</th>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>Attending</th>
-        </tr>`;
+    if (attendees.length === 0) {
+        container.innerHTML = `
+            <p class="text-muted text-center">
+                No attendees found for the selected events.
+            </p>
+        `;
+        return;
+    }
+
+    let html = `
+        <h5 class="mb-3">Attendance Details</h5>
+        <table id="attendance-table" class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Section</th>
+                    <th>Event</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Attending</th>
+                </tr>
+            </thead>
+            <tbody>`;
     
     attendees.forEach(attendee => {
-        html += `<tr>
-            <td>${attendee.sectionname || ''}</td>
-            <td>${attendee._eventName || ''}</td>
-            <td>${attendee.firstname || ''}</td>
-            <td>${attendee.lastname || ''}</td>
-            <td>${attendee.attending || ''}</td>
-        </tr>`;
+        const attendingClass = attendee.attending === 'Yes' ? 'text-success' : 'text-danger';
+        html += `
+            <tr>
+                <td>${attendee.sectionname || ''}</td>
+                <td>${attendee._eventName || ''}</td>
+                <td>${attendee.firstname || ''}</td>
+                <td>${attendee.lastname || ''}</td>
+                <td class="${attendingClass}">
+                    <strong>${attendee.attending || ''}</strong>
+                </td>
+            </tr>`;
     });
     
-    html += `</table>`;
+    html += `
+            </tbody>
+        </table>
+        <div class="mt-3">
+            <small class="text-muted">
+                Showing ${attendees.length} attendee record(s)
+            </small>
+        </div>
+    `;
+    
     container.innerHTML = html;
 }

@@ -20,7 +20,15 @@ const redirectUri = window.location.origin + '/callback.html';
 
 // Show login button only if not authenticated
 function showLoginOnly() {
+    console.log('showLoginOnly called'); // Debug
     const mainContainer = document.querySelector('main .row');
+    console.log('mainContainer:', mainContainer); // Debug
+    
+    if (!mainContainer) {
+        console.error('main .row not found in DOM');
+        return;
+    }
+    
     mainContainer.className = 'row justify-content-center';
     mainContainer.innerHTML = `
         <div class="col-12 col-sm-8 col-md-6 col-lg-4">
@@ -35,6 +43,18 @@ function showLoginOnly() {
             </div>
         </div>
     `;
+    
+    // Debug the button
+    const loginBtn = document.getElementById('osm-login-btn');
+    console.log('Login button:', loginBtn); // Debug
+    
+    if (loginBtn) {
+        loginBtn.addEventListener('click', function () {
+            console.log('Login button clicked!'); // Debug
+            const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
+            window.location.href = authUrl;
+        });
+    }
 }
 
 // Show the main app UI after authentication
@@ -119,9 +139,12 @@ async function handleSectionSelect(selectedSectionIds) {
     }
 }
 
-// Handler for event selection (to load attendees)
-async function handleEventSelect(selectedEventIndices) {
-    if (selectedEventIndices.length === 0) {
+// ONLY ONE handleEventSelect function - this one handles the UI directly
+async function handleEventSelect() {
+    // Get selected event checkboxes
+    const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
         showError('Please select at least one event');
         return;
     }
@@ -130,16 +153,40 @@ async function handleEventSelect(selectedEventIndices) {
     try {
         let allAttendees = [];
         
-        // Get the events from the current events table
-        const eventsTable = document.getElementById('events-table');
-        const eventRows = eventsTable.querySelectorAll('tr');
-        
-        for (const idx of selectedEventIndices) {
-            // You'll need to implement getEventAttendance logic here
-            // const attendees = await getEventAttendance(eventId);
-            // allAttendees = allAttendees.concat(attendees);
-        }
-        
+        // Get event data from the table rows
+        selectedCheckboxes.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            const cells = row.querySelectorAll('td');
+            
+            // Extract event info from the table row
+            const eventInfo = {
+                section: cells[1].textContent,
+                name: cells[2].textContent,
+                date: cells[3].textContent
+            };
+            
+            // For now, create mock attendee data
+            // TODO: Replace with actual API call to get attendees
+            const mockAttendees = [
+                { 
+                    sectionname: eventInfo.section, 
+                    _eventName: eventInfo.name, 
+                    firstname: 'John', 
+                    lastname: 'Smith', 
+                    attending: 'Yes' 
+                },
+                { 
+                    sectionname: eventInfo.section, 
+                    _eventName: eventInfo.name, 
+                    firstname: 'Jane', 
+                    lastname: 'Doe', 
+                    attending: 'No' 
+                }
+            ];
+            
+            allAttendees = allAttendees.concat(mockAttendees);
+        });
+
         renderAttendeesTable(allAttendees);
         
     } catch (err) {
@@ -150,28 +197,21 @@ async function handleEventSelect(selectedEventIndices) {
     }
 }
 
-// Add this function:
 function initializeApp() {
-    if (getToken()) {
-        showMainUI();
-    } else {
-        showLoginOnly();
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
     // Hide UI elements
     document.getElementById('spinner').style.display = 'none';
     const errorMsg = document.getElementById('error-message');
     errorMsg.style.display = 'none';
     errorMsg.textContent = '';
     
-    // Initialize app
-    initializeApp();
-});
+    // Check if user is logged in
+    const token = sessionStorage.getItem('access_token');
+    if (token) {
+        showMainUI();
+    } else {
+        showLoginOnly();
+    }
+}
 
-// OSM login button logic
-document.getElementById('osm-login-btn').addEventListener('click', function () {
-    const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}`;
-    window.location.href = authUrl;
-});
+// Call on page load
+document.addEventListener('DOMContentLoaded', initializeApp);
