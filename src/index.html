@@ -9,14 +9,17 @@
     <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
-    <!-- Simplified CSP -->
+    <!-- Update your CSP to include Sentry -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
         script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com;
         style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com;
         font-src 'self' https://cdnjs.cloudflare.com data:;
         img-src 'self' data: https:;
-        connect-src 'self' https://vikings-osm-event-manager.onrender.com https://www.onlinescoutmanager.co.uk;
+        connect-src 'self' 
+            https://vikings-osm-event-manager.onrender.com 
+            https://www.onlinescoutmanager.co.uk
+            https://*.sentry.io;
         frame-src 'self' https://www.onlinescoutmanager.co.uk;
     ">
     
@@ -51,7 +54,27 @@
         </div>
     </main>
     <div id="error-message" class="alert alert-danger text-center" style="display:none;margin:1em 0;"></div>
-    <div id="spinner" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2em;z-index:9999;">⏳ Loading...</div>
+
+    <!-- Modern Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none; opacity: 0;">
+        <div class="loading-content">
+            <div id="spinner-container">
+                <!-- Spinners will be created dynamically -->
+            </div>
+            <div class="loading-text">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Alternative: Skeleton Loading (for data tables) -->
+    <div id="skeleton-loader" class="skeleton-loader" style="display: none;">
+        <div class="skeleton-card">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+        </div>
+    </div>
+
     <!-- Only your main script -->
     <script type="module" src="main.js"></script>
 </body>

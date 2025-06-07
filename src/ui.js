@@ -1,14 +1,206 @@
-export function showSpinner() {
-    document.getElementById('spinner').style.display = 'block';
+// Configuration object for spinner types
+const SPINNER_TYPES = {
+    DOTS: 'dots',
+    RING: 'ring', 
+    GRADIENT: 'gradient'
+};
+
+// Default spinner type - will be set from main.js
+let currentSpinnerType = SPINNER_TYPES.DOTS;
+
+// Function to change default spinner type
+export function setDefaultSpinner(type) {
+    if (Object.values(SPINNER_TYPES).includes(type)) {
+        currentSpinnerType = type;
+        console.log(`Loading animation set to: ${type}`);
+    } else {
+        console.warn(`Invalid spinner type: ${type}. Using default: ${currentSpinnerType}`);
+    }
 }
+
+// Updated showSpinner function
+export function showSpinner(text = 'Loading...', spinnerType = currentSpinnerType) {
+    const overlay = document.getElementById('loading-overlay');
+    
+    // Fallback if overlay doesn't exist
+    if (!overlay) {
+        console.warn('Loading overlay not found, creating fallback spinner');
+        createFallbackSpinner(text);
+        return;
+    }
+    
+    const textEl = overlay.querySelector('.loading-text');
+    const spinnerContainer = overlay.querySelector('#spinner-container');
+    
+    if (textEl) textEl.textContent = text;
+    
+    // Clear existing spinner
+    if (spinnerContainer) {
+        spinnerContainer.innerHTML = '';
+        
+        // Create the requested spinner type
+        const spinner = createSpinner(spinnerType);
+        spinnerContainer.appendChild(spinner);
+    }
+    
+    overlay.style.display = 'flex';
+    setTimeout(() => overlay.style.opacity = '1', 10);
+}
+
 export function hideSpinner() {
-    document.getElementById('spinner').style.display = 'none';
+    const overlay = document.getElementById('loading-overlay');
+    
+    // Fallback if overlay doesn't exist
+    if (!overlay) {
+        const fallback = document.getElementById('fallback-spinner');
+        if (fallback) {
+            document.body.removeChild(fallback);
+        }
+        return;
+    }
+    
+    overlay.style.opacity = '0';
+    
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 300);
 }
+
+// Fallback spinner creation
+function createFallbackSpinner(text) {
+    const existing = document.getElementById('fallback-spinner');
+    if (existing) return;
+    
+    const fallback = document.createElement('div');
+    fallback.id = 'fallback-spinner';
+    fallback.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.95);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        flex-direction: column;
+    `;
+    
+    fallback.innerHTML = `
+        <div style="
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        "></div>
+        <div style="color: #6c757d; font-size: 0.9rem;">${text}</div>
+    `;
+    
+    document.body.appendChild(fallback);
+}
+
+function createSpinner(type) {
+    const spinner = document.createElement('div');
+    
+    switch (type) {
+        case SPINNER_TYPES.DOTS:
+            spinner.className = 'modern-spinner';
+            break;
+        case SPINNER_TYPES.RING:
+            spinner.className = 'ring-spinner';
+            break;
+        case SPINNER_TYPES.GRADIENT:
+            spinner.className = 'gradient-spinner';
+            break;
+        default:
+            spinner.className = 'modern-spinner'; // fallback
+    }
+    
+    return spinner;
+}
+
+// Add skeleton loading for tables
+export function showSkeletonLoader(container) {
+    if (container) {
+        // Create skeleton placeholder in specific container
+        container.innerHTML = `
+            <div class="skeleton-card">
+                <div class="skeleton-header"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line"></div>
+            </div>
+        `;
+    } else {
+        const skeleton = document.getElementById('skeleton-loader');
+        skeleton.style.display = 'block';
+    }
+}
+
+export function hideSkeletonLoader() {
+    const skeleton = document.getElementById('skeleton-loader');
+    if (skeleton) skeleton.style.display = 'none';
+}
+
+// Add button loading state
+export function setButtonLoading(buttonId, loading = true, text = 'Loading...') {
+    const button = document.getElementById(buttonId);
+    if (!button) return;
+    
+    if (loading) {
+        button.classList.add('btn-loading');
+        button.disabled = true;
+        // Store original content
+        if (!button.dataset.originalContent) {
+            button.dataset.originalContent = button.innerHTML;
+        }
+        button.innerHTML = `<span class="btn-text">${text}</span>`;
+    } else {
+        button.classList.remove('btn-loading');
+        button.disabled = false;
+        // Restore original content
+        if (button.dataset.originalContent) {
+            button.innerHTML = button.dataset.originalContent;
+            delete button.dataset.originalContent;
+        }
+    }
+}
+
+// Update showError with modern styling
 export function showError(msg) {
-    const el = document.getElementById('error-message');
-    el.textContent = msg;
-    el.style.display = 'block';
-    setTimeout(() => { el.style.display = 'none'; }, 5000);
+    // Create modern toast notification instead of basic alert
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.innerHTML = `
+        <div class="error-toast-content">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${msg}</span>
+            <button class="error-toast-close">&times;</button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Show with animation
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 5000);
+    
+    // Manual close
+    toast.querySelector('.error-toast-close').addEventListener('click', () => {
+        toast.classList.remove('show');
+        setTimeout(() => document.body.removeChild(toast), 300);
+    });
 }
 
 export function renderSectionsTable(sections, onLoadEvents) {
@@ -16,7 +208,11 @@ export function renderSectionsTable(sections, onLoadEvents) {
     if (!container) {
         container = document.createElement('div');
         container.id = 'sections-table-container';
-        document.getElementById('app-content').appendChild(container);
+        // Fix: Look for the correct parent container
+        const parentContainer = document.querySelector('#sidebar .card-body') || document.getElementById('app-content');
+        if (parentContainer) {
+            parentContainer.appendChild(container);
+        }
     }
     
     let html = `<table id="sections-table" class="table table-striped table-sm">
@@ -33,15 +229,36 @@ export function renderSectionsTable(sections, onLoadEvents) {
     });
 
     html += `</table>
-    <button id="load-events-btn" class="btn btn-primary btn-sm w-100">Load Events</button>`;
+    <button id="load-events-btn" class="btn btn-primary btn-sm w-100 regular-content">Load Events</button>`;
     
     container.innerHTML = html;
     
-    document.getElementById('load-events-btn').onclick = () => {
-        const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
-        const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-        onLoadEvents(selectedSectionIds);
-    };
+    // Regular load events button
+    const loadEventsBtn = document.getElementById('load-events-btn');
+    if (loadEventsBtn) {
+        loadEventsBtn.onclick = () => {
+            const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
+            const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            onLoadEvents(selectedSectionIds);
+        };
+    }
+    
+    // Mini load events button (for collapsed sidebar) - FIX: Only show if collapsed
+    const loadEventsMini = document.getElementById('load-events-btn-mini');
+    if (loadEventsMini) {
+        // Check if sidebar is currently collapsed
+        const sidebar = document.getElementById('sidebar');
+        const isCollapsed = sidebar && sidebar.classList.contains('collapsed');
+        
+        // Only show if collapsed, otherwise hide
+        loadEventsMini.style.display = isCollapsed ? 'block' : 'none';
+        
+        loadEventsMini.onclick = () => {
+            const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
+            const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            onLoadEvents(selectedSectionIds);
+        };
+    }
 }
 
 export function renderEventsTable(events, onLoadAttendees) {
@@ -49,7 +266,11 @@ export function renderEventsTable(events, onLoadAttendees) {
     if (!container) {
         container = document.createElement('div');
         container.id = 'events-table-container';
-        document.getElementById('app-content').appendChild(container);
+        // Fix: Look for the correct parent container
+        const parentContainer = document.querySelector('#sidebar .card-body') || document.getElementById('app-content');
+        if (parentContainer) {
+            parentContainer.appendChild(container);
+        }
     }
 
     // Mobile detection
@@ -155,7 +376,7 @@ export function renderEventsTable(events, onLoadAttendees) {
     }
     
     html += `</tbody></table></div>
-        <button id="load-attendees-btn" class="btn btn-primary btn-sm w-100 mt-2">
+        <button id="load-attendees-btn" class="btn btn-primary btn-sm w-100 mt-2 regular-content">
             Show Attendees for Selected Events
         </button>`;
     
@@ -169,12 +390,34 @@ export function renderEventsTable(events, onLoadAttendees) {
     // Store events data for the callback
     container.eventsData = events;
     
-    document.getElementById('load-attendees-btn').onclick = () => {
-        const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
-        const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
-        const selectedEvents = selectedIndices.map(idx => events[idx]);
-        onLoadAttendees(selectedEvents);
-    };
+    // Regular load attendees button
+    const loadAttendeesBtn = document.getElementById('load-attendees-btn');
+    if (loadAttendeesBtn) {
+        loadAttendeesBtn.onclick = () => {
+            const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
+            const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
+            const selectedEvents = selectedIndices.map(idx => events[idx]);
+            onLoadAttendees(selectedEvents);
+        };
+    }
+    
+    // Mini load attendees button (for collapsed sidebar) - FIX: Only show if collapsed
+    const loadAttendeesMini = document.getElementById('load-attendees-btn-mini');
+    if (loadAttendeesMini) {
+        // Check if sidebar is currently collapsed
+        const sidebar = document.getElementById('sidebar');
+        const isCollapsed = sidebar && sidebar.classList.contains('collapsed');
+        
+        // Only show if collapsed, otherwise hide
+        loadAttendeesMini.style.display = isCollapsed ? 'block' : 'none';
+        
+        loadAttendeesMini.onclick = () => {
+            const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
+            const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
+            const selectedEvents = selectedIndices.map(idx => events[idx]);
+            onLoadAttendees(selectedEvents);
+        };
+    }
 }
 
 // Add the mobile expand functionality
