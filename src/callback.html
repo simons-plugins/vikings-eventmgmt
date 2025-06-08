@@ -2,126 +2,150 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OSM Auth Callback</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap CSS for styling -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication - Vikings Event Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .auth-container {
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #f8f9fa;
+        }
+        .callback-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .callback-header {
+            background: #003366;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="card shadow-sm" style="max-width: 500px; width: 100%;">
-            <div class="card-body text-center p-5">
-                <div class="spinner mb-4"></div>
-                <h2 class="h4 mb-3">Authenticating with OSM...</h2>
-                <p class="text-muted mb-4">
-                    Please wait while we securely connect to Online Scout Manager.<br>
-                    <strong>This may take up to a minute.</strong>
-                </p>
-                <div id="status-message" class="small text-info">
-                    Exchanging authorization code...
+    <div class="callback-card" style="min-width: 400px;">
+        <div class="callback-header">
+            <h4><i class="fas fa-shield-alt me-2"></i>Authentication</h4>
+        </div>
+        <div class="card-body text-center p-4">
+            <div class="spinner"></div>
+            <h5 id="status-message">Processing authentication...</h5>
+            <p class="text-muted" id="status-detail">Please wait while we verify your credentials with OSM.</p>
+            
+            <div id="error-section" style="display: none;">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="error-message">Authentication failed</span>
                 </div>
+                <button onclick="retryAuth()" class="btn btn-primary me-2">
+                    <i class="fas fa-redo me-1"></i>Retry
+                </button>
+                <button onclick="goHome()" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-1"></i>Home
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
-        //const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+        console.log('OAuth callback page loaded');
         
-        function updateStatus(message) {
+        function updateStatus(message, detail = '') {
             document.getElementById('status-message').textContent = message;
+            document.getElementById('status-detail').textContent = detail;
         }
-
-        // Get the ?code=... from the URL
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
         
-        if (code) {
-            updateStatus('Contacting authentication server...');
-            
-            // Add a timeout warning
-            const timeoutWarning = setTimeout(() => {
-                updateStatus('Still processing... OSM servers may be responding slowly.');
-            }, 10000); // Show after 10 seconds
-            
-            // Exchange code for access token via backend
-            fetch(`${BACKEND_URL}/exchange-token`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    code: code,
-                    redirect_uri: window.location.origin + '/callback.html'
-                })
-            })
-            .then(res => {
-                clearTimeout(timeoutWarning);
-                updateStatus('Processing response...');
-                return res.json();
-            })
-            .then(data => {
-                console.log('Token exchange response:', data);
-                if (data.access_token) {
-                    updateStatus('Authentication successful! Redirecting...');
-                    sessionStorage.setItem('access_token', data.access_token);
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1000);
-                } else {
-                    clearTimeout(timeoutWarning);
-                    document.querySelector('.card-body').innerHTML = `
-                        <h2 class="h4 text-danger mb-3">Authentication Failed</h2>
-                        <p class="text-muted mb-4">There was an error during authentication.</p>
-                        <details class="text-left">
-                            <summary>Error Details</summary>
-                            <pre class="small mt-2">${JSON.stringify(data, null, 2)}</pre>
-                        </details>
-                        <a href="index.html" class="btn btn-primary mt-3">Try Again</a>
-                    `;
-                }
-            })
-            .catch(error => {
-                clearTimeout(timeoutWarning);
-                console.error('Auth error:', error);
-                document.querySelector('.card-body').innerHTML = `
-                    <h2 class="h4 text-danger mb-3">Connection Error</h2>
-                    <p class="text-muted mb-4">
-                        Unable to connect to the authentication server.<br>
-                        This could be due to slow network or server issues.
-                    </p>
-                    <a href="index.html" class="btn btn-primary">Try Again</a>
-                `;
-            });
-        } else {
-            document.querySelector('.card-body').innerHTML = `
-                <h2 class="h4 text-danger mb-3">Invalid Callback</h2>
-                <p class="text-muted mb-4">No authorization code found in the URL.</p>
-                <a href="index.html" class="btn btn-primary">Return to Home</a>
-            `;
+        function showError(message) {
+            document.querySelector('.spinner').style.display = 'none';
+            document.getElementById('status-message').style.display = 'none';
+            document.getElementById('status-detail').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-section').style.display = 'block';
         }
+        
+        function retryAuth() {
+            window.location.href = '/index.html';
+        }
+        
+        function goHome() {
+            window.location.href = '/index.html';
+        }
+        
+        async function handleCallback() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const error = urlParams.get('error');
+                
+                if (error) {
+                    console.error('OAuth error:', error);
+                    showError(`Authentication failed: ${error}`);
+                    return;
+                }
+                
+                if (!code) {
+                    console.error('No authorization code received');
+                    showError('No authorization code received from OSM');
+                    return;
+                }
+                
+                console.log('Authorization code received, exchanging for token...');
+                updateStatus('Exchanging authorization code...', 'Connecting to OSM servers...');
+                
+                // Exchange code for token
+                const response = await fetch('https://vikings-osm-event-manager.onrender.com/callback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ code: code })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    console.error('Token exchange failed:', response.status, errorData);
+                    showError(`Authentication failed: ${response.status} ${errorData}`);
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Token exchange successful');
+                
+                updateStatus('Authentication successful!', 'Redirecting to application...');
+                
+                // Redirect back to main app
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Callback handling failed:', error);
+                showError(`Network error: ${error.message}`);
+            }
+        }
+        
+        // Start the callback process
+        handleCallback();
     </script>
 </body>
 </html>

@@ -13,6 +13,43 @@ header {
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
+main.container {
+    padding-top: 1rem;
+}
+
+/* === CONTAINER VISIBILITY CONTROLS === */
+.container-hidden {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+.container-visible {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#login-container.container-hidden {
+    display: none !important;
+}
+
+#main-container.container-visible {
+    display: block !important;
+}
+
+.d-flex.container-hidden {
+    display: none !important;
+}
+
+#main-container .container-fluid {
+    display: block !important;
+}
+
+#main-container .row {
+    display: flex !important;
+}
+
 /* === BUTTON STYLES === */
 .main-btn, .secondary-btn {
     padding: 0.75rem 2rem;
@@ -47,10 +84,25 @@ header {
     font-weight: 500;
 }
 
+#login-btn {
+    transition: opacity 0.3s ease;
+}
+
+#logout-btn {
+    transition: opacity 0.3s ease;
+}
+
+#osm-login-btn {
+    font-size: 1.5em;
+    white-space: normal;
+    line-height: 1.2;
+}
+
 /* === CARD STYLES === */
 .card {
     border: none;
     transition: box-shadow 0.15s ease-in-out;
+    display: block !important;
 }
 
 .card:hover {
@@ -69,6 +121,15 @@ header {
 
 .bg-info {
     background-color: #17a2b8 !important;
+}
+
+/* === NAVIGATION === */
+.navbar {
+    display: block !important;
+}
+
+.navbar-brand {
+    font-weight: bold;
 }
 
 /* === TABLE STYLES === */
@@ -239,33 +300,13 @@ header {
     opacity: 0;
 }
 
-/* === ANIMATIONS === */
-@keyframes pulse-dots {
-    0%, 80%, 100% {
-        transform: scale(0.8);
-        opacity: 0.5;
-    }
-    40% {
-        transform: scale(1);
-        opacity: 1;
-    }
+/* === ERROR STYLES === */
+#error-message {
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-@keyframes gradient-spin {
-    to { transform: rotate(360deg); }
-}
-
-@keyframes fade-pulse {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
-}
-
-/* === ERROR TOAST === */
 .error-toast {
     position: fixed;
     top: 20px;
@@ -359,6 +400,20 @@ header {
     height: calc(100% - 70px);
 }
 
+.sidebar-section {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.sidebar-section:hover {
+    background-color: rgba(0,123,255,0.1);
+}
+
+.sidebar-section.active {
+    background-color: rgba(0,123,255,0.2);
+    border-left: 3px solid #007bff;
+}
+
 /* === TOGGLE BUTTON STYLES === */
 #sidebar-toggle {
     display: flex;
@@ -380,6 +435,40 @@ header {
 
 #sidebar-toggle:hover i {
     transform: scale(1.1);
+}
+
+/* === MAIN CONTENT LAYOUT === */
+#main-container .col-md-3,
+#main-container .col-md-9,
+#main-container .col-lg-2,
+#main-container .col-lg-10 {
+    display: block !important;
+}
+
+/* === ANIMATIONS === */
+@keyframes pulse-dots {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes gradient-spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fade-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
 }
 
 /* === MOBILE RESPONSIVE === */
@@ -533,7 +622,7 @@ header {
         transform: scale(1.1);
     }
     
-    /* Mini button management - CONSOLIDATED RULES */
+    /* Mini button management */
     .mini-btn {
         display: none !important;
     }
@@ -572,18 +661,13 @@ header {
 }
 
 /* === UTILITIES === */
-main.container {
-    padding-top: 1rem;
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
 }
 
-#osm-login-btn {
-    font-size: 1.5em;
-    white-space: normal;
-    line-height: 1.2;
-}
-
-#error-message {
-    border-radius: 8px;
-    border: none;
-    font-weight: 500;
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

@@ -2,80 +2,93 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Viking Scouts</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap 4 CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <!-- Add Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikings Event Management</title>
     
-    <!-- Update your CSP to include Sentry -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com;
-        style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://stackpath.bootstrapcdn.com;
-        font-src 'self' https://cdnjs.cloudflare.com data:;
-        img-src 'self' data: https:;
-        connect-src 'self' 
-            https://vikings-osm-event-manager.onrender.com 
-            https://www.onlinescoutmanager.co.uk
-            https://*.sentry.io;
-        frame-src 'self' https://www.onlinescoutmanager.co.uk;
-    ">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Sentry -->
-    <script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
-    <script>
-      Sentry.init({ dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544' });
-    </script>
 </head>
 <body>
-    <header class="bg-primary text-white py-3 mb-4">
-        <div class="container">
-            <h1 class="h3 mb-0">Viking Scouts</h1>
+    <!-- LOGIN CONTAINER - Only shown when NOT authenticated -->
+    <div id="login-container" class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+        <div class="card shadow-lg" style="max-width: 400px; width: 100%;">
+            <div class="card-header bg-primary text-white text-center">
+                <h4><i class="fas fa-shield-alt me-2"></i>Vikings Event Management</h4>
+            </div>
+            <div class="card-body text-center p-4">
+                <h5 class="mb-3">Welcome!</h5>
+                <p class="text-muted mb-4">Please log in with your Online Scout Manager account to continue.</p>
+                <button id="login-btn" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login with OSM
+                </button>
+            </div>
         </div>
-    </header>
-    <main class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-sm-8 col-md-6 col-lg-4">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body text-center">
-                        <button id="osm-login-btn"
-                            class="btn btn-primary btn-lg w-100 mb-3"
-                            style="font-size:1.5em; white-space: normal; line-height: 1.2;">
-                            Login with<br>Online Scout Manager (OSM)
-                        </button>
-                        <div id="app-content"></div>
+    </div>
+
+    <!-- MAIN CONTAINER - Only shown when authenticated -->
+    <div id="main-container" class="container-fluid" style="display: none;">
+        <!-- Navigation Bar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#"><i class="fas fa-users me-2"></i>Vikings Event Management</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <button id="logout-btn" class="btn btn-outline-light">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="container-fluid mt-3">
+            <div class="row">
+                <!-- Sidebar -->
+                <div class="col-md-3 col-lg-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-list me-2"></i>Sections</h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <div id="sections-container">
+                                <button id="load-sections-btn" class="btn btn-outline-primary btn-sm w-100">
+                                    <i class="fas fa-download me-1"></i>Load Sections
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-md-9 col-lg-10">
+                    <div id="main-content">
+                        <div class="card">
+                            <div class="card-body text-center py-5">
+                                <h5 class="text-muted">Welcome to Vikings Event Management</h5>
+                                <p class="text-muted">Select a section from the sidebar to view events and attendance.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </main>
-    <div id="error-message" class="alert alert-danger text-center" style="display:none;margin:1em 0;"></div>
-
-    <!-- Modern Loading Overlay -->
-    <div id="loading-overlay" class="loading-overlay" style="display: none; opacity: 0;">
-        <div class="loading-content">
-            <div id="spinner-container">
-                <!-- Spinners will be created dynamically -->
-            </div>
-            <div class="loading-text">Loading...</div>
-        </div>
     </div>
 
-    <!-- Alternative: Skeleton Loading (for data tables) -->
-    <div id="skeleton-loader" class="skeleton-loader" style="display: none;">
-        <div class="skeleton-card">
-            <div class="skeleton-header"></div>
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line short"></div>
-            <div class="skeleton-line"></div>
-        </div>
-    </div>
-
-    <!-- Only your main script -->
-    <script type="module" src="main.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Your main application -->
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
