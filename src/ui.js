@@ -215,11 +215,21 @@ export function renderSectionsTable(sections, onLoadEvents) {
         }
     }
     
-    let html = `<table id="sections-table" class="table table-striped table-sm">
-        <tr>
-            <th style="width: 40px;"></th>
-            <th>Section Name</th>
-        </tr>`;
+    let html = `
+        <div class="mb-3">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearSectionsCache(); loadSectionsFromCacheOrAPI();" title="Refresh sections from API">
+                    <i class="fas fa-sync"></i>
+                </button>
+            </div>
+            <table id="sections-table" class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <th>Section Name</th>
+                    </tr>
+                </thead>
+                <tbody>`;
     
     sections.forEach(section => {
         html += `<tr>
@@ -228,8 +238,9 @@ export function renderSectionsTable(sections, onLoadEvents) {
         </tr>`;
     });
 
-    html += `</table>
-    <button id="load-events-btn" class="btn btn-primary btn-sm w-100 regular-content">Load Events</button>`;
+    html += `</tbody></table>
+            <button id="load-events-btn" class="btn btn-primary btn-sm w-100">Load Events for Selected Sections</button>
+        </div>`;
     
     container.innerHTML = html;
     
@@ -239,29 +250,18 @@ export function renderSectionsTable(sections, onLoadEvents) {
         loadEventsBtn.onclick = () => {
             const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
             const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-            onLoadEvents(selectedSectionIds);
-        };
-    }
-    
-    // Mini load events button (for collapsed sidebar) - FIX: Only show if collapsed
-    const loadEventsMini = document.getElementById('load-events-btn-mini');
-    if (loadEventsMini) {
-        // Check if sidebar is currently collapsed
-        const sidebar = document.getElementById('sidebar');
-        const isCollapsed = sidebar && sidebar.classList.contains('collapsed');
-        
-        // Only show if collapsed, otherwise hide
-        loadEventsMini.style.display = isCollapsed ? 'block' : 'none';
-        
-        loadEventsMini.onclick = () => {
-            const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
-            const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+            
+            if (selectedSectionIds.length === 0) {
+                showError('Please select at least one section');
+                return;
+            }
+            
             onLoadEvents(selectedSectionIds);
         };
     }
 }
 
-export function renderEventsTable(events, onLoadAttendees) {
+export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = false) {
     let container = document.getElementById('events-table-container');
     if (!container) {
         container = document.createElement('div');
@@ -273,8 +273,8 @@ export function renderEventsTable(events, onLoadAttendees) {
         }
     }
 
-    // Mobile detection
-    const isMobile = window.innerWidth <= 767;
+    // Mobile detection - or force mobile layout
+    const isMobile = window.innerWidth <= 767 || forceMobileLayout;
     
     let html;
     
@@ -348,14 +348,14 @@ export function renderEventsTable(events, onLoadAttendees) {
                 <thead>
                     <tr>
                         <th style="width: 40px;"></th>
-                        <th style="min-width: 120px;">Section</th>
-                        <th style="min-width: 150px;">Event Name</th>
-                        <th style="min-width: 100px;">Date</th>
-                        <th style="min-width: 60px;">Yes</th>
-                        <th style="min-width: 80px;">Members</th>
-                        <th style="min-width: 60px;">YLs</th>
-                        <th style="min-width: 80px;">Leaders</th>
-                        <th style="min-width: 60px;">No</th>
+                        <th style="min-width: 120px;" data-sort="sectionname">Section</th>
+                        <th style="min-width: 150px;" data-sort="name">Event Name</th>
+                        <th style="min-width: 100px;" data-sort="date">Date</th>
+                        <th style="min-width: 60px;" data-sort="yes">Yes</th>
+                        <th style="min-width: 80px;" data-sort="yes_members">Members</th>
+                        <th style="min-width: 60px;" data-sort="yes_yls">YLs</th>
+                        <th style="min-width: 80px;" data-sort="yes_leaders">Leaders</th>
+                        <th style="min-width: 60px;" data-sort="no">No</th>
                     </tr>
                 </thead>
                 <tbody>`;
@@ -418,6 +418,9 @@ export function renderEventsTable(events, onLoadAttendees) {
             onLoadAttendees(selectedEvents);
         };
     }
+
+    // Add sortable headers
+    addSortableHeaders('events-table', events, sortedEvents => renderEventsTable(sortedEvents, onLoadAttendees, forceMobileLayout));
 }
 
 // Add the mobile expand functionality
@@ -506,29 +509,29 @@ export function renderAttendeesTable(attendees) {
         
         <!-- Filter Controls -->
         <div class="row mb-3">
-            <div class="col-md-3 mb-2">
-                <label for="section-filter" class="form-label small">Filter by Section:</label>
+            <div class="col-md-3 mb-3">
+                <label for="section-filter" class="form-label fw-semibold">Filter by Section</label>
                 <select id="section-filter" class="form-select form-select-sm">
                     <option value="">All Sections</option>
                     ${uniqueSections.map(section => `<option value="${section}">${section}</option>`).join('')}
                 </select>
             </div>
-            <div class="col-md-3 mb-2">
-                <label for="event-filter" class="form-label small">Filter by Event:</label>
+            <div class="col-md-3 mb-3">
+                <label for="event-filter" class="form-label fw-semibold">Filter by Event</label>
                 <select id="event-filter" class="form-select form-select-sm">
                     <option value="">All Events</option>
                     ${uniqueEvents.map(event => `<option value="${event}">${event}</option>`).join('')}
                 </select>
             </div>
-            <div class="col-md-3 mb-2">
-                <label for="status-filter" class="form-label small">Filter by Status:</label>
+            <div class="col-md-3 mb-3">
+                <label for="status-filter" class="form-label fw-semibold">Filter by Status</label>
                 <select id="status-filter" class="form-select form-select-sm">
                     <option value="">All Statuses</option>
                     ${uniqueStatuses.map(status => `<option value="${status}">${status}</option>`).join('')}
                 </select>
             </div>
-            <div class="col-md-3 mb-2">
-                <label for="name-filter" class="form-label small">Search by Name:</label>
+            <div class="col-md-3 mb-3">
+                <label for="name-filter" class="form-label fw-semibold">Search by Name</label>
                 <input type="text" id="name-filter" class="form-control form-control-sm" placeholder="Enter name...">
             </div>
         </div>
@@ -547,8 +550,10 @@ export function renderAttendeesTable(attendees) {
         html += `
                 <thead>
                     <tr>
-                        <th style="width: 70px;" class="text-center">Status</th>
-                        <th>Name</th>
+                        <th style="width: 70px;" class="text-center sortable-header" data-sort="totalYes">Status</th>
+                        <th class="sortable-header mobile-name-sort" data-sort="firstname" data-alt-sort="lastname">
+                            Name <small class="text-muted" id="name-sort-hint">(first)</small>
+                        </th>
                         <th style="width: 40px;" class="text-center">▼</th>
                     </tr>
                 </thead>
@@ -558,9 +563,9 @@ export function renderAttendeesTable(attendees) {
         html += `
                 <thead>
                     <tr>
-                        <th style="width: 80px;" class="text-center">Attending</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
+                        <th style="width: 80px;" class="text-center sortable-header" data-sort="totalYes">Attending</th>
+                        <th class="sortable-header" data-sort="firstname">First Name</th>
+                        <th class="sortable-header" data-sort="lastname">Last Name</th>
                         <th style="width: 40px;" class="text-center">▼</th>
                     </tr>
                 </thead>
@@ -650,6 +655,110 @@ export function renderAttendeesTable(attendees) {
     
     // Add filtering functionality (update the existing filter functions to work with grouped data)
     addAttendeeFiltering(attendeesByPerson, attendees);
+
+    // Add sortable headers - pass the grouped person data for sorting
+    const personDataArray = Object.entries(attendeesByPerson).map(([personKey, person]) => ({
+        ...person,
+        personKey: personKey
+    }));
+    
+    addSortableHeaders('attendance-table', personDataArray, (sortedPersonData) => {
+        // Re-create the attendeesByPerson object in the new sorted order
+        const sortedAttendeesByPerson = {};
+        sortedPersonData.forEach(person => {
+            sortedAttendeesByPerson[person.personKey] = person;
+        });
+        
+        // Re-render with sorted data
+        renderSortedAttendeesTable(sortedAttendeesByPerson, attendees);
+    });
+}
+
+// Function to re-render attendance table with sorted data (without recreating filters)
+function renderSortedAttendeesTable(sortedAttendeesByPerson, originalAttendees) {
+    const tbody = document.getElementById('attendance-tbody');
+    if (!tbody) return;
+    
+    const isMobile = window.innerWidth <= 767;
+    let html = '';
+    
+    // Generate person rows in sorted order
+    Object.entries(sortedAttendeesByPerson).forEach(([personKey, person], personIdx) => {
+        if (isMobile) {
+            html += `
+                <tr class="person-row" data-person-idx="${personIdx}" style="cursor: pointer;">
+                    <td class="text-center total-column">
+                        <div class="d-flex flex-column">
+                            <span class="text-success fw-bold">${person.totalYes}</span>
+                            <span class="text-danger small">${person.totalNo}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">${person.firstname} ${person.lastname}</div>
+                        <small class="text-muted">${person.events.length} event(s)</small>
+                    </td>
+                    <td class="text-center">
+                        <span class="expand-icon">▼</span>
+                    </td>
+                </tr>`;
+        } else {
+            html += `
+                <tr class="person-row" data-person-idx="${personIdx}" style="cursor: pointer;">
+                    <td class="text-center">
+                        <span class="text-success fw-bold">${person.totalYes}</span> / 
+                        <span class="text-danger">${person.totalNo}</span>
+                    </td>
+                    <td>${person.firstname}</td>
+                    <td>${person.lastname}</td>
+                    <td class="text-center">
+                        <span class="expand-icon">▼</span>
+                    </td>
+                </tr>`;
+        }
+
+        // Add expandable details row
+        html += `
+            <tr class="person-details-row" id="person-details-${personIdx}" style="display: none;">
+                <td colspan="${isMobile ? 3 : 4}" class="bg-light p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="bg-secondary text-white">
+                                <tr>
+                                    <th class="small">Section</th>
+                                    <th class="small">Event</th>
+                                    <th class="small text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+        // Add event details for this person
+        person.events.forEach(event => {
+            const statusClass = event.attending === 'Yes' ? 'text-success' : 'text-danger';
+            html += `
+                <tr>
+                    <td class="small">${event.sectionname || ''}</td>
+                    <td class="small">${event._eventName || ''}</td>
+                    <td class="small text-center ${statusClass}">
+                        <strong>${event.attending || ''}</strong>
+                    </td>
+                </tr>`;
+        });
+
+        html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>`;
+    });
+
+    tbody.innerHTML = html;
+    
+    // Re-add expand functionality
+    addPersonExpandFunctionality();
+    
+    // Re-add filtering functionality
+    addAttendeeFiltering(sortedAttendeesByPerson, originalAttendees);
 }
 
 // Add the person expand functionality
@@ -737,4 +846,123 @@ function addAttendeeFiltering(attendeesByPerson, originalAttendees) {
         });
         applyFilters();
     });
+}
+
+// === TABLE SORTING FUNCTIONALITY ===
+
+let currentSortColumn = null;
+let currentSortDirection = 'asc';
+
+function sortTableData(data, column, direction = 'asc') {
+    return [...data].sort((a, b) => {
+        let aVal = a[column];
+        let bVal = b[column];
+        
+        // Handle different data types
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+            aVal = aVal.toLowerCase();
+            bVal = bVal.toLowerCase();
+        }
+        
+        // Handle numbers (attendance counts, yes/no counts, totals)
+        if (column.includes('total') || column.includes('count') || 
+            column === 'yes' || column === 'no' || column === 'totalYes' || column === 'totalNo' ||
+            column.includes('yes_') || column.includes('members') || column.includes('yls') || column.includes('leaders')) {
+            aVal = parseInt(aVal) || 0;
+            bVal = parseInt(bVal) || 0;
+        }
+        
+        // Handle dates
+        if (column.includes('date') || column === '_eventDate') {
+            aVal = new Date(aVal);
+            bVal = new Date(bVal);
+        }
+        
+        if (direction === 'asc') {
+            return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        } else {
+            return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+        }
+    });
+}
+
+function addSortableHeaders(tableId, data, renderFunction) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    
+    const headers = table.querySelectorAll('th[data-sort]');
+    
+    headers.forEach(header => {
+        header.style.cursor = 'pointer';
+        header.style.userSelect = 'none';
+        
+        // Add sort indicator
+        if (!header.querySelector('.sort-indicator')) {
+            const indicator = document.createElement('span');
+            indicator.className = 'sort-indicator ml-1';
+            indicator.innerHTML = '⇅'; // Up-down arrow
+            header.appendChild(indicator);
+        }
+        
+        header.addEventListener('click', () => {
+            const column = header.getAttribute('data-sort');
+            const altColumn = header.getAttribute('data-alt-sort');
+            
+            // Special handling for mobile name column with dual sort
+            if (header.classList.contains('mobile-name-sort')) {
+                const nameHint = document.getElementById('name-sort-hint');
+                
+                // If currently sorting by firstname, switch to lastname
+                if (currentSortColumn === 'firstname') {
+                    header.setAttribute('data-sort', 'lastname');
+                    if (nameHint) nameHint.textContent = '(last)';
+                    currentSortColumn = 'lastname';
+                } else {
+                    // Otherwise sort by firstname
+                    header.setAttribute('data-sort', 'firstname');
+                    if (nameHint) nameHint.textContent = '(first)';
+                    currentSortColumn = 'firstname';
+                }
+                currentSortDirection = 'asc'; // Reset to ascending when switching sort type
+            } else {
+                // Normal sorting behavior
+                // Toggle direction if same column, otherwise default to asc
+                if (currentSortColumn === column) {
+                    currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentSortDirection = 'asc';
+                }
+                currentSortColumn = column;
+            }
+            
+            // Update sort indicators
+            headers.forEach(h => {
+                const indicator = h.querySelector('.sort-indicator');
+                if (h === header) {
+                    indicator.innerHTML = currentSortDirection === 'asc' ? '↑' : '↓';
+                    h.style.backgroundColor = '#e3f2fd';
+                } else {
+                    indicator.innerHTML = '⇅';
+                    h.style.backgroundColor = '';
+                }
+            });
+            
+            // Sort and re-render
+            const sortedData = sortTableData(data, currentSortColumn, currentSortDirection);
+            renderFunction(sortedData);
+        });
+    });
+}
+
+// Helper functions for attendance table
+function getAttendanceBadgeClass(attending) {
+    switch (attending) {
+        case 'Yes': return 'badge-success';
+        case 'No': return 'badge-danger';
+        default: return 'badge-secondary';
+    }
+}
+
+function getAttendanceStatus(attending) {
+    return attending || 'Unknown';
 }

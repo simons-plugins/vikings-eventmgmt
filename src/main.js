@@ -108,83 +108,29 @@ function showLoginScreen() {
 // Update the mobile button in showMainUI to use chevron instead of bars:
 
 function showMainUI() {
-    const mainContainer = document.querySelector('main.container');
+    // Get the main container and replace all content with attendance panel
+    const mainContainer = document.querySelector('main');
     if (!mainContainer) {
-        console.error('Main container not found for showMainUI');
+        console.error('Main container not found');
         return;
     }
 
-    // Update mobile button to use chevron-right instead of bars
-    mainContainer.className = 'container-fluid';
+    // Replace entire main content with attendance details panel
     mainContainer.innerHTML = `
-        <div class="row">
-            <!-- Mobile sidebar toggle button with chevron -->
-            <button id="sidebar-toggle" class="btn btn-primary d-lg-none position-fixed" 
-                    style="top: 80px; left: 10px; z-index: 1050; border-radius: 50%; width: 50px; height: 50px;">
-                <i class="fas fa-chevron-right"></i>
-            </button>
-            
-            <!-- Sidebar overlay for mobile -->
-            <div id="sidebar-overlay" class="sidebar-overlay d-lg-none"></div>
-            
-            <!-- Left Column - Sections & Events -->
-            <div class="col-12 col-lg-4">
-                <div id="sidebar" class="sidebar">
-                    <!-- Desktop collapse button - keep FontAwesome icons -->
-                    <button class="desktop-collapse-btn d-none d-lg-flex" id="desktop-collapse" title="Collapse sidebar">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    
-                    <!-- Mobile header -->
-                    <div class="sidebar-header d-lg-none">
-                        <h6 class="mb-0 text-white">Sections & Events</h6>
-                        <button id="sidebar-close" class="btn btn-sm btn-outline-light">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- Rest of the HTML stays the same... -->
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header bg-info text-white d-none d-lg-block regular-content">
-                            <h5 class="mb-0">Sections & Events</h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Regular content (hidden when collapsed on desktop) -->
-                            <div class="regular-content">
-                                <button id="get-sections-btn" class="btn btn-primary btn-block mb-3">
-                                    Get Sections
-                                </button>
-                                <div id="sections-table-container"></div>
-                                <div id="events-table-container" class="mt-3"></div>
-                            </div>
-                            
-                            <!-- Mini buttons (shown when collapsed on desktop) - START HIDDEN -->
-                            <button id="get-sections-btn-mini" class="mini-btn btn btn-primary" title="Get Sections" style="display: none;">
-                                <i class="fas fa-list"></i>
-                            </button>
-                            <button id="load-events-btn-mini" class="mini-btn btn btn-success" title="Load Events" style="display: none;">
-                                <i class="fas fa-calendar"></i>
-                            </button>
-                            <button id="load-attendees-btn-mini" class="mini-btn btn btn-info" title="Show Attendees" style="display: none;">
-                                <i class="fas fa-users"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Right Column - Attendance Details -->
-            <div class="col-12 col-lg-8">
-                <div id="main-content" class="main-content">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">Attendance Details</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="attendance-panel">
-                                <p class="text-muted text-center">
-                                    Select events from the sidebar to view attendance details.
-                                </p>
+        <div class="container-fluid p-0">
+            <div class="row no-gutters">
+                <div class="col-12">
+                    <div id="app-content">
+                        <div id="attendance-panel" class="mt-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0">Attendance Details</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted text-center">
+                                        Use the sidebar to load sections and events, then view attendance details here.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -193,120 +139,207 @@ function showMainUI() {
         </div>
     `;
 
-    // Initialize sidebar functionality
+    // Initialize sidebar after content is loaded
     initializeSidebar();
-
-    // Re-attach event listeners with null checks
-    const getSectionsBtn = document.getElementById('get-sections-btn');
-    const getSectionsBtnMini = document.getElementById('get-sections-btn-mini');
     
-    if (getSectionsBtn) {
-        getSectionsBtn.addEventListener('click', handleGetSections);
+    // Ensure sidebar has proper content
+    const sidebarContent = document.querySelector('.sidebar-content');
+    if (!sidebarContent) {
+        console.warn('Sidebar content not found, recreating...');
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            sidebar.innerHTML = `
+                <!-- Sidebar Header -->
+                <div class="sidebar-header">
+                    <h3>Sections & Events</h3>
+                </div>
+                
+                <!-- Sidebar Content -->
+                <div class="sidebar-content">
+                    <div id="sections-table-container"></div>
+                    <div id="events-table-container" class="mt-3"></div>
+                </div>
+            `;
+        }
     }
     
-    if (getSectionsBtnMini) {
-        getSectionsBtnMini.addEventListener('click', handleGetSections);
+    // Auto-load sections when main UI is shown
+    loadSectionsFromCacheOrAPI();
+
+    console.log('Main UI initialized - ready for sidebar interaction');
+}
+
+// Make functions globally available for onclick handlers
+window.clearSectionsCache = clearSectionsCache;
+window.loadSectionsFromCacheOrAPI = loadSectionsFromCacheOrAPI;
+
+// === SIDEBAR FUNCTIONALITY ===
+
+function initializeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (!sidebar || !toggleBtn) {
+        console.warn('Sidebar elements not found');
+        return;
+    }
+
+    // Toggle sidebar (open/close)
+    toggleBtn.addEventListener('click', () => {
+        if (sidebar.classList.contains('open')) {
+            // Sidebar is open, so close it
+            closeSidebar();
+        } else {
+            // Sidebar is closed, so open it
+            sidebar.classList.add('open');
+            document.body.classList.add('sidebar-open');
+            if (overlay) overlay.classList.add('show');
+            
+            // Move toggle button to the right when sidebar is open
+            toggleBtn.style.left = '340px';
+        }
+    });
+
+    // Close sidebar function
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        document.body.classList.remove('sidebar-open');
+        if (overlay) overlay.classList.remove('show');
+        
+        // Move toggle button back to original position
+        toggleBtn.style.left = '1rem';
+    }
+    
+    // Close sidebar when clicking overlay
+    if (overlay) {
+        overlay.addEventListener('click', closeSidebar);
+    }
+
+    // Close sidebar when clicking outside of it
+    document.addEventListener('click', (e) => {
+        if (
+            sidebar.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            e.target !== toggleBtn &&
+            !toggleBtn.contains(e.target)
+        ) {
+            closeSidebar();
+        }
+    });
+
+    // Close sidebar on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            closeSidebar();
+        }
+    });
+}
+
+// === SECTION CACHING FUNCTIONALITY ===
+
+const SECTIONS_CACHE_KEY = 'viking_sections_cache';
+const SECTIONS_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+function saveSectionsToCache(sections) {
+    try {
+        const cacheData = {
+            sections: sections,
+            timestamp: Date.now(),
+            version: '1.0' // For future cache invalidation if needed
+        };
+        localStorage.setItem(SECTIONS_CACHE_KEY, JSON.stringify(cacheData));
+        console.log(`Cached ${sections.length} sections to localStorage`);
+    } catch (error) {
+        console.warn('Failed to cache sections:', error);
     }
 }
 
-// Add sidebar functionality
-function initializeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    const toggleBtn = document.getElementById('sidebar-toggle');
-    const closeBtn = document.getElementById('sidebar-close');
-    const mainContent = document.getElementById('main-content');
-    const desktopCollapseBtn = document.getElementById('desktop-collapse');
-
-    // Toggle sidebar on mobile
-    toggleBtn?.addEventListener('click', () => {
-        sidebar.classList.add('show');
-        overlay.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    });
-
-    // Close sidebar
-    function closeSidebar() {
-        sidebar.classList.remove('show');
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
+function getSectionsFromCache() {
+    try {
+        const cached = localStorage.getItem(SECTIONS_CACHE_KEY);
+        if (!cached) return null;
+        
+        const cacheData = JSON.parse(cached);
+        const now = Date.now();
+        
+        // Check if cache is expired
+        if (now - cacheData.timestamp > SECTIONS_CACHE_EXPIRY) {
+            console.log('Sections cache expired, removing...');
+            localStorage.removeItem(SECTIONS_CACHE_KEY);
+            return null;
+        }
+        
+        console.log(`Loaded ${cacheData.sections.length} sections from cache`);
+        return cacheData.sections;
+    } catch (error) {
+        console.warn('Failed to load sections from cache:', error);
+        localStorage.removeItem(SECTIONS_CACHE_KEY);
+        return null;
     }
+}
 
-    closeBtn?.addEventListener('click', closeSidebar);
-    overlay?.addEventListener('click', closeSidebar);
+function clearSectionsCache() {
+    localStorage.removeItem(SECTIONS_CACHE_KEY);
+    console.log('Sections cache cleared');
+}
 
-    // Desktop sidebar toggle with proper mini button management
-    desktopCollapseBtn?.addEventListener('click', () => {
-        const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+async function loadSectionsFromCacheOrAPI() {
+    // Show loading state
+    const sectionsContainer = document.getElementById('sections-table-container');
+    if (sectionsContainer) {
+        sectionsContainer.innerHTML = `
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <div class="small text-muted mt-2">Loading sections...</div>
+            </div>
+        `;
+    }
+    
+    try {
+        // First try to load from cache
+        let sections = getSectionsFromCache();
         
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('expanded');
-        
-        // Update the chevron direction
-        const chevron = desktopCollapseBtn.querySelector('i');
-        
-        if (!isCurrentlyCollapsed) {
-            // Collapsing - show mini buttons, hide regular content
-            chevron.classList.remove('fa-chevron-left');
-            chevron.classList.add('fa-chevron-right');
-            desktopCollapseBtn.title = 'Expand sidebar';
-            
-            // Show appropriate mini buttons based on current state
-            const getSectionsMini = document.getElementById('get-sections-btn-mini');
-            const loadEventsMini = document.getElementById('load-events-btn-mini');
-            const loadAttendeesMini = document.getElementById('load-attendees-btn-mini');
-            
-            if (getSectionsMini) getSectionsMini.style.display = 'block';
-            
-            // Only show load events mini if events are loaded
-            if (loadEventsMini && document.querySelector('#events-table')) {
-                loadEventsMini.style.display = 'block';
-            }
-            
-            // Only show load attendees mini if attendees are loaded
-            if (loadAttendeesMini && document.querySelector('#attendance-table')) {
-                loadAttendeesMini.style.display = 'block';
-            }
-            
+        if (sections) {
+            // Use cached sections
+            currentSections = sections;
+            renderSectionsTable(sections, handleSectionSelect);
         } else {
-            // Expanding - hide mini buttons, show regular content
-            chevron.classList.remove('fa-chevron-right');
-            chevron.classList.add('fa-chevron-left');
-            desktopCollapseBtn.title = 'Collapse sidebar';
+            // Cache miss - load from API
+            console.log('No cached sections found, loading from API...');
+            sections = await getUserRoles();
             
-            // Hide all mini buttons
-            document.querySelectorAll('.mini-btn').forEach(btn => {
-                btn.style.display = 'none';
-            });
+            if (sections && sections.length > 0) {
+                // Save to cache for next time
+                saveSectionsToCache(sections);
+                currentSections = sections;
+                renderSectionsTable(sections, handleSectionSelect);
+            } else {
+                throw new Error('No sections returned from API');
+            }
         }
         
-        // Hide any open dropdown content that might overflow
-        document.querySelectorAll('.mobile-details-row, .person-details-row').forEach(row => {
-            if (row.style.display !== 'none') {
-                row.style.display = 'none';
-                const parentRow = row.previousElementSibling;
-                if (parentRow) {
-                    parentRow.classList.remove('expanded');
-                    const icon = parentRow.querySelector('.expand-icon');
-                    if (icon) icon.textContent = '▼';
-                }
-            }
-        });
-    });
-
-    // Auto-close sidebar on mobile after selection
-    function autoCloseMobile() {
-        if (window.innerWidth <= 991) {
-            setTimeout(closeSidebar, 500);
+    } catch (error) {
+        console.error('Failed to load sections:', error);
+        showError('Failed to load sections. Please try refreshing.');
+        
+        // Show error state in sidebar
+        if (sectionsContainer) {
+            sectionsContainer.innerHTML = `
+                <div class="alert alert-warning alert-sm">
+                    <div class="small">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Failed to load sections
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm mt-2 w-100" onclick="loadSectionsFromCacheOrAPI()">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>
+            `;
         }
     }
-
-    // Close sidebar when attendees are loaded (mobile)
-    const originalLoadAttendees = window.loadAttendees;
-    window.loadAttendees = function(...args) {
-        if (originalLoadAttendees) originalLoadAttendees.apply(this, args);
-        autoCloseMobile();
-    };
 }
 
 // Complete handler for section selection
@@ -343,8 +376,8 @@ async function handleSectionSelect(selectedSectionIds) {
             }
         }
 
-        // Render the events table
-        renderEventsTable(allEvents, handleEventSelect);
+        // Render the events table - force mobile layout on all screen sizes
+        renderEventsTable(allEvents, handleEventSelect, true); // true = force mobile layout
         
     } catch (err) {
         showError('Failed to load events');
@@ -420,33 +453,6 @@ async function handleEventSelect(selectedEvents) {
         console.error('Overall error:', err);
     } finally {
         hideSpinner();
-    }
-}
-
-// Function to handle getting sections (extracted to avoid duplication)
-async function handleGetSections() {
-    showSpinner('Loading sections...');
-    setButtonLoading('get-sections-btn', true, 'Loading...');
-    setButtonLoading('get-sections-btn-mini', true, 'Loading...');
-    
-    try {
-        const roles = await getUserRoles();
-        currentSections = roles;
-        renderSectionsTable(roles, handleSectionSelect);
-        
-        // Show the mini load events button when sections are loaded
-        const loadEventsMini = document.getElementById('load-events-btn-mini');
-        if (loadEventsMini) {
-            loadEventsMini.style.display = 'block';
-        }
-        
-    } catch (err) {
-        showError('Failed to load sections');
-    } finally {
-        hideSpinner();
-        // Clear loading state for both buttons
-        setButtonLoading('get-sections-btn', false);
-        setButtonLoading('get-sections-btn-mini', false);
     }
 }
 
