@@ -5,8 +5,17 @@
 // 'gradient' = Colorful gradient spinner (modern, vibrant)
 const PREFERRED_SPINNER = 'ring'; // Change this to your preference
 
-// Initialize error monitoring
-import './sentry.js';
+// Initialize error monitoring (conditionally for production)
+try {
+    // Only load Sentry in production or when explicitly enabled
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        import('./sentry.js').catch(error => {
+            console.warn('Sentry initialization failed:', error);
+        });
+    }
+} catch (error) {
+    console.warn('Error monitoring not available:', error);
+}
 
 // Import functions
 import {
@@ -594,13 +603,41 @@ function switchAttendanceTab(tabType) {
 // Make tab switching globally available
 window.switchAttendanceTab = switchAttendanceTab;
 
-// Render original summary attendance table (original renderAttendeesTable)
+// Render original summary attendance table (optimized for performance)
 function renderSummaryAttendanceTable(attendees) {
     const summaryContent = document.getElementById('summary-content');
     if (!summaryContent) return;
 
-    let tableHtml = `
-        <div class="table-responsive">
+    if (attendees.length === 0) {
+        summaryContent.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Name</th>
+                            <th>Section</th>
+                            <th>Event</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="5" class="text-center py-4">
+                                <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+                                <p class="text-muted mt-2">No attendance records found.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+        return;
+    }
+
+    // Build HTML efficiently using array join (faster than string concatenation)
+    const htmlParts = [
+        `<div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
                 <thead class="thead-dark">
                     <tr>
@@ -611,24 +648,18 @@ function renderSummaryAttendanceTable(attendees) {
                         <th>Status</th>
                     </tr>
                 </thead>
-                <tbody>
-    `;
+                <tbody>`
+    ];
 
-    if (attendees.length === 0) {
-        tableHtml += `
-            <tr>
-                <td colspan="5" class="text-center py-4">
-                    <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
-                    <p class="text-muted mt-2">No attendance records found.</p>
-                </td>
-            </tr>
-        `;
-    } else {
-        attendees.forEach(attendee => {
+    // Batch process for better performance with large datasets
+    const batchSize = 100;
+    for (let i = 0; i < attendees.length; i += batchSize) {
+        const batch = attendees.slice(i, i + batchSize);
+        batch.forEach(attendee => {
             const status = attendee.attending || attendee.status || 'Unknown';
             const statusColor = getStatusColor(status);
             
-            tableHtml += `
+            htmlParts.push(`
                 <tr>
                     <td>
                         <strong>${attendee.firstname || ''} ${attendee.lastname || ''}</strong>
@@ -646,24 +677,28 @@ function renderSummaryAttendanceTable(attendees) {
                         <span class="badge badge-${statusColor}">${status}</span>
                     </td>
                 </tr>
-            `;
+            `);
         });
     }
 
-    tableHtml += `
+    htmlParts.push(`
                 </tbody>
             </table>
         </div>
-    `;
+    `);
 
-    summaryContent.innerHTML = tableHtml;
+    // Single DOM update for optimal performance
+    summaryContent.innerHTML = htmlParts.join('');
 }
 
-// Render grouped attendance table (renamed for clarity)
+// Render grouped attendance table (optimized for performance)
 function renderGroupedAttendanceTable(attendees) {
     const groupedContent = document.getElementById('grouped-content');
     if (!groupedContent) return;
 
+    // Use document fragment for better performance
+    const fragment = document.createDocumentFragment();
+    
     // Group attendees by status
     const groupedAttendees = {};
     attendees.forEach(attendee => {
@@ -688,52 +723,59 @@ function renderGroupedAttendanceTable(attendees) {
         return a.localeCompare(b);
     });
 
-    let tableHtml = '';
-
     if (sortedStatuses.length === 0) {
-        tableHtml += `
+        groupedContent.innerHTML = `
             <div class="text-center py-4">
                 <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
                 <p class="text-muted mt-2">No attendance records found.</p>
             </div>
         `;
-    } else {
-        sortedStatuses.forEach((status, index) => {
-            const records = groupedAttendees[status];
-            const isExpanded = index === 0; // First group expanded by default
-            const collapseId = `grouped-collapse-${status.replace(/\s+/g, '-').toLowerCase()}`;
-            
-            // Get status color based on attendance value
-            const statusColor = getStatusColor(status);
-            
-            tableHtml += `
-                <div class="border-bottom">
-                    <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom cursor-pointer" 
-                         style="cursor: pointer;"
-                         onclick="toggleGroupedSection('${collapseId}')">
-                        <h6 class="mb-0">
-                            <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} me-2" id="icon-${collapseId}"></i>
-                            <span class="badge badge-${statusColor} me-2">${status}</span>
-                            <span class="text-muted">${records.length} attendees</span>
-                        </h6>
-                    </div>
-                    <div class="collapse ${isExpanded ? 'show' : ''}" id="${collapseId}">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Section</th>
-                                        <th>Event</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-            `;
+        return;
+    }
 
-            records.forEach(attendee => {
-                tableHtml += `
+    // Build HTML string efficiently (faster than DOM manipulation)
+    const htmlParts = [];
+    
+    sortedStatuses.forEach((status, index) => {
+        const records = groupedAttendees[status];
+        const isExpanded = index === 0; // First group expanded by default
+        const collapseId = `grouped-collapse-${status.replace(/\s+/g, '-').toLowerCase()}`;
+        
+        // Get status color based on attendance value
+        const statusColor = getStatusColor(status);
+        
+        htmlParts.push(`
+            <div class="border-bottom">
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom cursor-pointer" 
+                     style="cursor: pointer;"
+                     onclick="toggleGroupedSection('${collapseId}')">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} me-2" id="icon-${collapseId}"></i>
+                        <span class="badge badge-${statusColor} me-2">${status}</span>
+                        <span class="text-muted">${records.length} attendees</span>
+                    </h6>
+                </div>
+                <div class="collapse ${isExpanded ? 'show' : ''}" id="${collapseId}">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Section</th>
+                                    <th>Event</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `);
+
+        // Batch process records for better performance
+        const batchSize = 50;
+        for (let i = 0; i < records.length; i += batchSize) {
+            const batch = records.slice(i, i + batchSize);
+            batch.forEach(attendee => {
+                htmlParts.push(`
                     <tr>
                         <td>
                             <strong>${attendee.firstname || ''} ${attendee.lastname || ''}</strong>
@@ -751,20 +793,21 @@ function renderGroupedAttendanceTable(attendees) {
                             <span class="badge badge-${statusColor}">${status}</span>
                         </td>
                     </tr>
-                `;
+                `);
             });
+        }
 
-            tableHtml += `
-                                </tbody>
-                            </table>
-                        </div>
+        htmlParts.push(`
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            `;
-        });
-    }
+            </div>
+        `);
+    });
 
-    groupedContent.innerHTML = tableHtml;
+    // Single DOM update for better performance
+    groupedContent.innerHTML = htmlParts.join('');
 }
 
 // Toggle grouped section (separate from main toggle to avoid conflicts)
