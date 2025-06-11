@@ -1,17 +1,7 @@
-// Hybrid approach: OAuth uses production (URL consistency), API calls can use local
-const OAUTH_BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
-const API_BACKEND_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://vikings-osm-event-manager.onrender.com'
-    : 'https://localhost:3001'; // Switch to local for testing
+// Always use production backend - simplifies configuration and avoids local setup issues
+const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
 
-// Use different backends for OAuth vs API calls
-const BACKEND_URL = OAUTH_BACKEND_URL; // OAuth always uses production
-const API_URL = API_BACKEND_URL;       // API calls can use local
-
-console.log('OAuth Backend URL:', OAUTH_BACKEND_URL);
-console.log('API Backend URL:', API_BACKEND_URL);
 console.log('Using Backend URL:', BACKEND_URL);
-console.log('Frontend protocol:', window.location.protocol);
 
 export function getToken() {
     return sessionStorage.getItem('access_token'); // <-- changed
@@ -277,7 +267,7 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
 
         console.log('Fetching flexi records for section:', sectionId, 'archived:', archived);
 
-        const response = await fetch(`${API_URL}/get-flexi-records`, {
+        const response = await fetch(`${BACKEND_URL}/get-flexi-records`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
