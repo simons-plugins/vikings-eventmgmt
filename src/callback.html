@@ -49,10 +49,11 @@
     </div>
 
     <script>
-        // Use HTTP for local development, HTTPS for production
-        const BACKEND_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3001' 
-            : 'https://vikings-osm-event-manager.onrender.com';
+        // Always use production backend for OAuth - local testing causes URL mismatches
+        const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+        
+        console.log('Using backend URL:', BACKEND_URL);
+        console.log('Current origin:', window.location.origin);
         
         function updateStatus(message) {
             document.getElementById('status-message').textContent = message;
