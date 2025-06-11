@@ -534,6 +534,42 @@ body > .container {
     padding-left: 0 !important;
 }
 
+/* === FLEXI RECORDS TABLE STYLES === */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.cursor-pointer:hover {
+    background-color: #e9ecef !important;
+}
+
+.collapse {
+    transition: height 0.35s ease;
+}
+
+.flexi-group-header {
+    transition: background-color 0.2s ease;
+}
+
+.flexi-group-header:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+/* Improved table spacing */
+.table-sm th,
+.table-sm td {
+    padding: 0.5rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.075);
+}
+
 /* === MOBILE RESPONSIVE === */
 @media (max-width: 767.98px) {
     .mobile-event-row {

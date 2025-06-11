@@ -384,6 +384,13 @@ async function loadSectionsFromCacheOrAPI() {
 
 // Complete handler for section selection
 async function handleSectionSelect(selectedSectionIds) {
+    // Check if application is blocked before making any API calls
+    if (sessionStorage.getItem('osm_blocked') === 'true') {
+        showError('Application is blocked by OSM. Contact administrator.');
+        showBlockedScreen();
+        return;
+    }
+    
     if (selectedSectionIds.length === 0) {
         showError('Please select at least one section');
         return;
@@ -496,7 +503,7 @@ async function handleEventSelect(selectedEvents) {
         if (allAttendees.length === 0) {
             showError('No attendance data found for selected events');
         } else {
-            renderAttendeesTable(allAttendees);
+            renderTabbedAttendanceView(allAttendees);
         }
         
     } catch (err) {
@@ -507,10 +514,642 @@ async function handleEventSelect(selectedEvents) {
     }
 }
 
+// Render tabbed attendance view with multiple pages
+function renderTabbedAttendanceView(attendees) {
+    const attendancePanel = document.getElementById('attendance-panel');
+    if (!attendancePanel) return;
+
+    const tabsHtml = `
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users"></i> 
+                        Attendance Records
+                        <span class="badge badge-light text-dark ms-2">${attendees.length} total</span>
+                    </h5>
+                </div>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="card-body p-0">
+                <nav>
+                    <div class="nav nav-tabs border-bottom" id="nav-tab" role="tablist">
+                        <button class="nav-link active" id="nav-summary-tab" data-toggle="tab" 
+                                data-target="#nav-summary" type="button" role="tab" 
+                                aria-controls="nav-summary" aria-selected="true"
+                                onclick="switchAttendanceTab('summary')">
+                            <i class="fas fa-table me-1"></i>
+                            Attendance Summary
+                        </button>
+                        <button class="nav-link" id="nav-grouped-tab" data-toggle="tab" 
+                                data-target="#nav-grouped" type="button" role="tab" 
+                                aria-controls="nav-grouped" aria-selected="false"
+                                onclick="switchAttendanceTab('grouped')">
+                            <i class="fas fa-layer-group me-1"></i>
+                            Attendance Detailed Groups
+                        </button>
+                    </div>
+                </nav>
+                
+                <!-- Tab Content -->
+                <div class="tab-content" id="nav-tabContent">
+                    <!-- Summary Tab -->
+                    <div class="tab-pane fade show active" id="nav-summary" role="tabpanel" aria-labelledby="nav-summary-tab">
+                        <div id="summary-content" class="p-0">
+                            <!-- Summary table will be rendered here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Grouped Tab -->
+                    <div class="tab-pane fade" id="nav-grouped" role="tabpanel" aria-labelledby="nav-grouped-tab">
+                        <div id="grouped-content" class="p-0">
+                            <!-- Grouped table will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    attendancePanel.innerHTML = tabsHtml;
+
+    // Render both tab contents
+    renderSummaryAttendanceTable(attendees);
+    renderGroupedAttendanceTable(attendees);
+}
+
+// Switch between attendance tabs
+function switchAttendanceTab(tabType) {
+    // Update tab active states
+    document.querySelectorAll('#nav-tab .nav-link').forEach(tab => {
+        tab.classList.remove('active');
+        tab.setAttribute('aria-selected', 'false');
+    });
+    
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+        pane.classList.remove('show', 'active');
+    });
+
+    if (tabType === 'summary') {
+        document.getElementById('nav-summary-tab').classList.add('active');
+        document.getElementById('nav-summary-tab').setAttribute('aria-selected', 'true');
+        document.getElementById('nav-summary').classList.add('show', 'active');
+    } else if (tabType === 'grouped') {
+        document.getElementById('nav-grouped-tab').classList.add('active');
+        document.getElementById('nav-grouped-tab').setAttribute('aria-selected', 'true');
+        document.getElementById('nav-grouped').classList.add('show', 'active');
+    }
+}
+
+// Make tab switching globally available
+window.switchAttendanceTab = switchAttendanceTab;
+
+// Render original summary attendance table (original renderAttendeesTable)
+function renderSummaryAttendanceTable(attendees) {
+    const summaryContent = document.getElementById('summary-content');
+    if (!summaryContent) return;
+
+    let tableHtml = `
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Section</th>
+                        <th>Event</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (attendees.length === 0) {
+        tableHtml += `
+            <tr>
+                <td colspan="5" class="text-center py-4">
+                    <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+                    <p class="text-muted mt-2">No attendance records found.</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        attendees.forEach(attendee => {
+            const status = attendee.attending || attendee.status || 'Unknown';
+            const statusColor = getStatusColor(status);
+            
+            tableHtml += `
+                <tr>
+                    <td>
+                        <strong>${attendee.firstname || ''} ${attendee.lastname || ''}</strong>
+                    </td>
+                    <td>
+                        ${attendee.sectionname || '-'}
+                    </td>
+                    <td>
+                        ${attendee._eventName || '-'}
+                    </td>
+                    <td>
+                        ${attendee._eventDate || '-'}
+                    </td>
+                    <td>
+                        <span class="badge badge-${statusColor}">${status}</span>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    tableHtml += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    summaryContent.innerHTML = tableHtml;
+}
+
+// Render grouped attendance table (renamed for clarity)
+function renderGroupedAttendanceTable(attendees) {
+    const groupedContent = document.getElementById('grouped-content');
+    if (!groupedContent) return;
+
+    // Group attendees by status
+    const groupedAttendees = {};
+    attendees.forEach(attendee => {
+        const status = attendee.attending || attendee.status || 'Unknown';
+        if (!groupedAttendees[status]) {
+            groupedAttendees[status] = [];
+        }
+        groupedAttendees[status].push(attendee);
+    });
+
+    // Sort statuses with custom priority: Yes, No, Invited, then alphabetical
+    const statusPriority = { 'Yes': 1, 'No': 2, 'Invited': 3 };
+    const sortedStatuses = Object.keys(groupedAttendees).sort((a, b) => {
+        const priorityA = statusPriority[a] || 999;
+        const priorityB = statusPriority[b] || 999;
+        
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        
+        // If same priority (both unknown), sort alphabetically
+        return a.localeCompare(b);
+    });
+
+    let tableHtml = '';
+
+    if (sortedStatuses.length === 0) {
+        tableHtml += `
+            <div class="text-center py-4">
+                <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No attendance records found.</p>
+            </div>
+        `;
+    } else {
+        sortedStatuses.forEach((status, index) => {
+            const records = groupedAttendees[status];
+            const isExpanded = index === 0; // First group expanded by default
+            const collapseId = `grouped-collapse-${status.replace(/\s+/g, '-').toLowerCase()}`;
+            
+            // Get status color based on attendance value
+            const statusColor = getStatusColor(status);
+            
+            tableHtml += `
+                <div class="border-bottom">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom cursor-pointer" 
+                         style="cursor: pointer;"
+                         onclick="toggleGroupedSection('${collapseId}')">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} me-2" id="icon-${collapseId}"></i>
+                            <span class="badge badge-${statusColor} me-2">${status}</span>
+                            <span class="text-muted">${records.length} attendees</span>
+                        </h6>
+                    </div>
+                    <div class="collapse ${isExpanded ? 'show' : ''}" id="${collapseId}">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Section</th>
+                                        <th>Event</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+
+            records.forEach(attendee => {
+                tableHtml += `
+                    <tr>
+                        <td>
+                            <strong>${attendee.firstname || ''} ${attendee.lastname || ''}</strong>
+                        </td>
+                        <td>
+                            ${attendee.sectionname || '-'}
+                        </td>
+                        <td>
+                            ${attendee._eventName || '-'}
+                        </td>
+                        <td>
+                            ${attendee._eventDate || '-'}
+                        </td>
+                        <td>
+                            <span class="badge badge-${statusColor}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    groupedContent.innerHTML = tableHtml;
+}
+
+// Toggle grouped section (separate from main toggle to avoid conflicts)
+function toggleGroupedSection(collapseId) {
+    const collapseElement = document.getElementById(collapseId);
+    const icon = document.getElementById(`icon-${collapseId}`);
+    
+    if (collapseElement && icon) {
+        if (collapseElement.classList.contains('show')) {
+            collapseElement.classList.remove('show');
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-right');
+        } else {
+            collapseElement.classList.add('show');
+            icon.classList.remove('fa-chevron-right');
+            icon.classList.add('fa-chevron-down');
+        }
+    }
+}
+
+// Make grouped toggle function globally available
+window.toggleGroupedSection = toggleGroupedSection;
+
+// Render attendance records grouped by status
+function renderGroupedAttendeesTable(attendees) {
+    const attendancePanel = document.getElementById('attendance-panel');
+    if (!attendancePanel) return;
+
+    // Group attendees by status (assuming there's a status field)
+    const groupedAttendees = {};
+    attendees.forEach(attendee => {
+        const status = attendee.attending || attendee.status || 'Unknown';
+        if (!groupedAttendees[status]) {
+            groupedAttendees[status] = [];
+        }
+        groupedAttendees[status].push(attendee);
+    });
+
+    // Sort statuses with custom priority: Yes, No, Invited, then alphabetical
+    const statusPriority = { 'Yes': 1, 'No': 2, 'Invited': 3 };
+    const sortedStatuses = Object.keys(groupedAttendees).sort((a, b) => {
+        const priorityA = statusPriority[a] || 999;
+        const priorityB = statusPriority[b] || 999;
+        
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+        
+        // If same priority (both unknown), sort alphabetically
+        return a.localeCompare(b);
+    });
+
+    let tableHtml = `
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-users"></i> 
+                    Attendance Records
+                    <span class="badge badge-light text-dark ms-2">${attendees.length} total</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+    `;
+
+    if (sortedStatuses.length === 0) {
+        tableHtml += `
+            <div class="text-center py-4">
+                <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No attendance records found.</p>
+            </div>
+        `;
+    } else {
+        sortedStatuses.forEach((status, index) => {
+            const records = groupedAttendees[status];
+            const isExpanded = index === 0; // First group expanded by default
+            const collapseId = `collapse-${status.replace(/\s+/g, '-').toLowerCase()}`;
+            
+            // Get status color based on attendance value
+            const statusColor = getStatusColor(status);
+            
+            tableHtml += `
+                <div class="border-bottom">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom cursor-pointer" 
+                         style="cursor: pointer;"
+                         onclick="toggleGroup('${collapseId}')">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} me-2" id="icon-${collapseId}"></i>
+                            <span class="badge badge-${statusColor} me-2">${status}</span>
+                            <span class="text-muted">${records.length} attendees</span>
+                        </h6>
+                    </div>
+                    <div class="collapse ${isExpanded ? 'show' : ''}" id="${collapseId}">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Section</th>
+                                        <th>Event</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+
+            records.forEach(attendee => {
+                tableHtml += `
+                    <tr>
+                        <td>
+                            <strong>${attendee.firstname || ''} ${attendee.lastname || ''}</strong>
+                        </td>
+                        <td>
+                            ${attendee.sectionname || '-'}
+                        </td>
+                        <td>
+                            ${attendee._eventName || '-'}
+                        </td>
+                        <td>
+                            ${attendee._eventDate || '-'}
+                        </td>
+                        <td>
+                            <span class="badge badge-${statusColor}">${status}</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    tableHtml += `
+            </div>
+        </div>
+    `;
+
+    attendancePanel.innerHTML = tableHtml;
+}
+
+// Get badge color based on attendance status
+function getStatusColor(status) {
+    switch (status?.toLowerCase()) {
+        case 'yes':
+        case 'attended':
+        case 'present':
+            return 'success';
+        case 'no':
+        case 'absent':
+        case 'not attended':
+            return 'danger';
+        case 'maybe':
+        case 'unknown':
+            return 'warning';
+        default:
+            return 'secondary';
+    }
+}
+
+// Toggle group expand/collapse
+function toggleGroup(collapseId) {
+    const collapseElement = document.getElementById(collapseId);
+    const icon = document.getElementById(`icon-${collapseId}`);
+    
+    if (collapseElement && icon) {
+        if (collapseElement.classList.contains('show')) {
+            collapseElement.classList.remove('show');
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-right');
+        } else {
+            collapseElement.classList.add('show');
+            icon.classList.remove('fa-chevron-right');
+            icon.classList.add('fa-chevron-down');
+        }
+    }
+}
+
+// Make toggle function globally available
+window.toggleGroup = toggleGroup;
+
+// Render flexi records grouped by status
+function renderFlexiRecordsTable(flexiRecords, sectionName) {
+    const attendancePanel = document.getElementById('attendance-panel');
+    if (!attendancePanel) return;
+
+    // Group records by status
+    const groupedRecords = {};
+    flexiRecords.forEach(record => {
+        const status = record.status || 'Unknown';
+        if (!groupedRecords[status]) {
+            groupedRecords[status] = [];
+        }
+        groupedRecords[status].push(record);
+    });
+
+    // Sort statuses for consistent display
+    const sortedStatuses = Object.keys(groupedRecords).sort();
+
+    let tableHtml = `
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-alt"></i> 
+                    Flexi Records - ${sectionName}
+                    <span class="badge badge-light text-dark ms-2">${flexiRecords.length} total</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+    `;
+
+    if (sortedStatuses.length === 0) {
+        tableHtml += `
+            <div class="text-center py-4">
+                <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2">No flexi records found for this section.</p>
+            </div>
+        `;
+    } else {
+        sortedStatuses.forEach((status, index) => {
+            const records = groupedRecords[status];
+            const isExpanded = index === 0; // First group expanded by default
+            const collapseId = `collapse-${status.replace(/\s+/g, '-').toLowerCase()}`;
+            
+            tableHtml += `
+                <div class="border-bottom">
+                    <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom cursor-pointer" 
+                         data-bs-toggle="collapse" 
+                         data-target="#${collapseId}" 
+                         aria-expanded="${isExpanded}" 
+                         aria-controls="${collapseId}"
+                         onclick="toggleGroup('${collapseId}')">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chevron-${isExpanded ? 'down' : 'right'} me-2" id="icon-${collapseId}"></i>
+                            <strong>${status}</strong>
+                            <span class="badge badge-primary ms-2">${records.length}</span>
+                        </h6>
+                    </div>
+                    <div class="collapse ${isExpanded ? 'show' : ''}" id="${collapseId}">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Date Completed</th>
+                                        <th>Completed By</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+
+            records.forEach(record => {
+                tableHtml += `
+                    <tr>
+                        <td>
+                            <strong>${record.firstname || ''} ${record.lastname || ''}</strong>
+                            ${record.section ? `<br><small class="text-muted">${record.section}</small>` : ''}
+                        </td>
+                        <td>
+                            ${record.completed_date ? new Date(record.completed_date).toLocaleDateString() : '-'}
+                        </td>
+                        <td>
+                            ${record.completed_by || '-'}
+                        </td>
+                        <td>
+                            ${record.details || '-'}
+                            ${record.comments ? `<br><small class="text-muted">${record.comments}</small>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    tableHtml += `
+            </div>
+        </div>
+    `;
+
+    attendancePanel.innerHTML = tableHtml;
+}
+
+// Show blocked screen when OSM API access is blocked
+function showBlockedScreen() {
+    const mainContainer = document.querySelector('main.container') || document.querySelector('main');
+    if (!mainContainer) {
+        console.error('Main container not found for blocked screen');
+        return;
+    }
+    
+    document.body.classList.add('login-screen');
+    updateSidebarToggleVisibility();
+    
+    mainContainer.style.display = 'block';
+    mainContainer.className = 'container';
+    mainContainer.innerHTML = `
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                <div class="card shadow border-danger mb-4">
+                    <div class="card-header bg-danger text-white text-center">
+                        <h3 class="mb-0">🚨 CRITICAL ERROR</h3>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="alert alert-danger mb-4">
+                            <h4 class="alert-heading">API Access Blocked!</h4>
+                            <p class="mb-0">
+                                This application has been <strong>blocked by Online Scout Manager</strong> 
+                                and can no longer access OSM data.
+                            </p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <i class="fas fa-ban text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        
+                        <h5 class="text-danger mb-3">Application Suspended</h5>
+                        <p class="text-muted mb-4">
+                            All API functionality has been disabled to prevent further issues. 
+                            <strong>Please contact the system administrator immediately.</strong>
+                        </p>
+                        
+                        <div class="bg-light p-3 rounded mb-4">
+                            <small class="text-muted">
+                                <strong>Blocked at:</strong> ${new Date().toLocaleString()}<br>
+                                <strong>Session ID:</strong> ${sessionStorage.getItem('access_token')?.substring(0, 12) || 'N/A'}...
+                            </small>
+                        </div>
+                        
+                        <button onclick="alert('Application is blocked. Contact administrator to resolve this issue.')" 
+                                class="btn btn-danger btn-lg disabled mb-3">
+                            <i class="fas fa-ban me-2"></i>
+                            Application Blocked
+                        </button>
+                        
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <a href="#" onclick="if(confirm('Clear blocked status? Only do this if administrator has resolved the issue.')) { sessionStorage.removeItem('osm_blocked'); window.location.reload(); }" 
+                                   class="text-secondary">
+                                    Admin: Clear Blocked Status
+                                </a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // Add the missing checkForToken function before your DOMContentLoaded listener:
 
 async function checkForToken() {
     console.log('Checking for token...');
+    
+    // Check if application has been blocked first
+    if (sessionStorage.getItem('osm_blocked') === 'true') {
+        console.error('🚨 Application is blocked - showing blocked screen');
+        showBlockedScreen();
+        return;
+    }
     
     // Show loading state instead of login screen initially
     showLoadingState();

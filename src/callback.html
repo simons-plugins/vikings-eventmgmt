@@ -117,6 +117,45 @@
             })
             .then(data => {
                 console.log('Token exchange response:', data);
+                
+                // Check for blocking in the response
+                if (data.error && typeof data.error === 'string') {
+                    const errorLower = data.error.toLowerCase();
+                    if (errorLower.includes('blocked') || errorLower.includes('permanently blocked')) {
+                        console.error('🚨 CRITICAL: OSM API BLOCKED during authentication!', data.error);
+                        
+                        // Set blocked flag to prevent future API calls
+                        sessionStorage.setItem('osm_blocked', 'true');
+                        
+                        // Show critical blocking error
+                        document.querySelector('.card-body').innerHTML = `
+                            <h2 class="h4 text-danger mb-3">🚨 CRITICAL: API ACCESS BLOCKED</h2>
+                            <div class="alert alert-danger">
+                                <strong>Your application has been blocked by Online Scout Manager!</strong>
+                            </div>
+                            <p class="text-muted mb-4">
+                                <strong>Error:</strong> ${data.error}<br><br>
+                                This application can no longer access OSM data. Please contact the system administrator immediately.
+                            </p>
+                            <details class="text-left mt-3">
+                                <summary>Technical Details</summary>
+                                <div class="small mt-2 p-2 bg-light">
+                                    <strong>Blocked At:</strong> Authentication<br>
+                                    <strong>Error Message:</strong> ${data.error}<br>
+                                    <strong>Time:</strong> ${new Date().toISOString()}<br>
+                                    <strong>Backend URL:</strong> ${BACKEND_URL}/exchange-token
+                                </div>
+                            </details>
+                            <div class="mt-4">
+                                <button onclick="alert('Application is blocked - contact administrator')" class="btn btn-danger disabled">
+                                    Application Blocked
+                                </button>
+                            </div>
+                        `;
+                        return; // Stop processing
+                    }
+                }
+                
                 if (data.access_token) {
                     updateStatus('Authentication successful! Redirecting...');
                     sessionStorage.setItem('access_token', data.access_token);

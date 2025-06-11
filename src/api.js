@@ -3,6 +3,150 @@ const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
 
 console.log('Using Backend URL:', BACKEND_URL);
 
+// Check if OSM API access has been blocked
+function checkIfBlocked() {
+    if (sessionStorage.getItem('osm_blocked') === 'true') {
+        throw new Error('OSM API access has been blocked. Please contact the system administrator.');
+    }
+}
+
+// Clear blocked status (for admin use)
+export function clearBlockedStatus() {
+    sessionStorage.removeItem('osm_blocked');
+    console.log('OSM blocked status cleared');
+}
+
+// Rate limit monitoring function
+function checkRateLimit(response) {
+    const limit = response.headers.get('X-RateLimit-Limit');
+    const remaining = response.headers.get('X-RateLimit-Remaining');
+    const reset = response.headers.get('X-RateLimit-Reset');
+    
+    if (limit && remaining && reset) {
+        const usage = ((limit - remaining) / limit * 100).toFixed(1);
+        console.log(`🔄 Rate Limit Status:`, {
+            limit: `${limit} requests/hour`,
+            remaining: `${remaining} requests left`,
+            resetIn: `${reset} seconds`,
+            usage: `${usage}% used`
+        });
+        
+        // Warn when getting close to limit
+        if (remaining < 10) {
+            console.warn(`⚠️ Rate limit warning: Only ${remaining} requests remaining!`);
+        }
+        
+        if (remaining < 5) {
+            console.error(`🚨 CRITICAL: Only ${remaining} requests remaining! Consider slowing down API calls.`);
+        }
+        
+        return { limit: parseInt(limit), remaining: parseInt(remaining), reset: parseInt(reset), usage: parseFloat(usage) };
+    }
+    return null;
+}
+
+// Enhanced error handling for API responses
+async function handleAPIResponse(response, apiName) {
+    // Check rate limiting first
+    const rateLimitInfo = checkRateLimit(response);
+    
+    // Handle rate limiting (429 status)
+    if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After');
+        console.error(`🚫 Rate limited on ${apiName}! Retry after ${retryAfter} seconds`);
+        throw new Error(`Rate limited. Please wait ${retryAfter} seconds before trying again.`);
+    }
+    
+    // Handle authentication errors
+    if (response.status === 401 || response.status === 403) {
+        console.warn(`🔐 Authentication error on ${apiName}: ${response.status}`);
+        handleTokenExpiration();
+        return null;
+    }
+    
+    // Handle other HTTP errors
+    if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        let errorMessage = `HTTP ${response.status}`;
+        let isBlocked = false;
+        let isCritical = false;
+        
+        try {
+            if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorData.error || errorMessage;
+                
+                // Check for OSM blocking/critical errors
+                if (errorData.error && typeof errorData.error === 'string') {
+                    const errorLower = errorData.error.toLowerCase();
+                    if (errorLower.includes('blocked') || errorLower.includes('permanently blocked')) {
+                        isBlocked = true;
+                        isCritical = true;
+                    }
+                }
+            } else {
+                // If not JSON, get text (but limit it)
+                const errorText = await response.text();
+                errorMessage = errorText.substring(0, 200);
+                
+                // Check for blocking in HTML/text responses
+                const errorLower = errorText.toLowerCase();
+                if (errorLower.includes('blocked') || errorLower.includes('permanently blocked')) {
+                    isBlocked = true;
+                    isCritical = true;
+                }
+                
+                if (errorText.includes('<!doctype') || errorText.includes('<html')) {
+                    errorMessage = `Server returned HTML error page instead of JSON (likely OSM API issue)`;
+                }
+            }
+        } catch (parseError) {
+            console.warn(`Could not parse error response from ${apiName}:`, parseError);
+        }
+        
+        // Handle critical blocking errors
+        if (isBlocked) {
+            console.error(`🚨 CRITICAL: OSM API BLOCKED on ${apiName}!`, errorMessage);
+            
+            // Show critical alert to user
+            alert(`CRITICAL ERROR: OSM API Access Blocked!\n\n` +
+                  `Error: ${errorMessage}\n\n` +
+                  `This application has been blocked by Online Scout Manager. ` +
+                  `Please contact the system administrator immediately.`);
+            
+            // Disable further API calls
+            sessionStorage.setItem('osm_blocked', 'true');
+            
+            throw new Error(`OSM API BLOCKED: ${errorMessage}`);
+        }
+        
+        console.error(`❌ ${apiName} API error:`, errorMessage);
+        throw new Error(`${apiName} failed: ${errorMessage}`);
+    }
+    
+    // Parse JSON response
+    try {
+        const data = await response.json();
+        
+        // Check for token expiration in response data
+        if (!isTokenValid(data)) {
+            console.warn(`🔐 Token invalid in ${apiName} response`);
+            handleTokenExpiration();
+            return null;
+        }
+        
+        return data;
+    } catch (jsonError) {
+        const responseText = await response.text();
+        console.error(`❌ ${apiName} returned invalid JSON:`, {
+            status: response.status,
+            contentType: response.headers.get('content-type'),
+            responsePreview: responseText.substring(0, 200)
+        });
+        throw new Error(`${apiName} returned invalid JSON response`);
+    }
+}
+
 export function getToken() {
     return sessionStorage.getItem('access_token'); // <-- changed
 }
@@ -259,6 +403,9 @@ export async function getEventAttendance(sectionId, eventId, termId) {
 
 export async function getFlexiRecords(sectionId, archived = 'n') {
     try {
+        // Check if API access has been blocked
+        checkIfBlocked();
+        
         const token = getToken();
         if (!token) {
             handleTokenExpiration();
@@ -277,28 +424,13 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
             })
         });
 
-        console.log('Flexi records API response status:', response.status);
+        // Use enhanced error handling
+        const data = await handleAPIResponse(response, 'getFlexiRecords');
+        if (data === null) return { items: [] }; // Token expired
 
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                handleTokenExpiration();
-                return { items: [] };
-            }
-            const errorText = await response.text();
-            console.error('Flexi records API error response:', errorText);
-            throw new Error(`Failed to fetch flexi records: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
         console.log('Flexi records API response data:', data);
-        
-        // Check for token expiration in response data
-        if (!isTokenValid(data)) {
-            handleTokenExpiration();
-            return { items: [] };
-        }
-
         return data;
+
     } catch (error) {
         console.error('Error fetching flexi records:', error);
         throw error;
