@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Viking Scouts</title>
+    <title>Viking Scouts Event Management</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Add favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏕️</text></svg>">
     <!-- Bootstrap 4 CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- Add Font Awesome for icons -->
@@ -28,7 +30,12 @@
     <!-- Sentry -->
     <script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
     <script>
-      Sentry.init({ dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544' });
+      Sentry.init({ 
+        dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544',
+        environment: window.location.hostname === 'localhost' ? 'development' : 'production',
+        tracesSampleRate: 1.0,
+        release: 'vikings-eventmgmt@1.0.0'
+      });
     </script>
 </head>
 <body>

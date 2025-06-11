@@ -189,8 +189,8 @@ header {
     width: 100%;
     /* Use dynamic viewport height for loading overlays */
     height: calc(var(--vh, 1vh) * 100);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.7); /* More transparent */
+    backdrop-filter: blur(2px); /* Subtle blur instead of hiding content */
     display: flex;
     align-items: center;
     justify-content: center;

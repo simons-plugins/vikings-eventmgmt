@@ -36,7 +36,7 @@ describe('UI Functions', () => {
             const container = document.getElementById('sections-table-container');
             expect(container.innerHTML).toContain('1st Guildford Scout Group');
             expect(container.innerHTML).toContain('2nd Guildford Scout Group');
-            expect(container.innerHTML).toContain('Load Events for Selected Sections');
+            expect(container.innerHTML).toContain('Refresh sections from API');
         });
 
         test('should handle empty sections array', () => {
@@ -60,6 +60,24 @@ describe('UI Functions', () => {
             const checkbox = document.querySelector('.section-checkbox');
             expect(checkbox).toBeTruthy();
             expect(checkbox.value).toBe('1');
+        });
+
+        test('should auto-load events when sections are selected', () => {
+            const mockSections = [
+                { sectionid: '1', sectionname: 'Test Section' }
+            ];
+            const mockCallback = jest.fn();
+
+            renderSectionsTable(mockSections, mockCallback);
+
+            const checkbox = document.querySelector('.section-checkbox');
+            
+            // Simulate checking a section
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change'));
+
+            // Should call the callback with selected section IDs
+            expect(mockCallback).toHaveBeenCalledWith(['1']);
         });
     });
 

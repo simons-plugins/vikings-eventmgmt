@@ -43,8 +43,14 @@ export function showSpinner(text = 'Loading...', spinnerType = currentSpinnerTyp
         spinnerContainer.appendChild(spinner);
     }
     
+    // Show with smooth transition - don't hide content abruptly
     overlay.style.display = 'flex';
-    setTimeout(() => overlay.style.opacity = '1', 10);
+    overlay.style.opacity = '0';
+    
+    // Small delay for smoother transition
+    setTimeout(() => {
+        overlay.style.opacity = '0.9'; // Less opaque to show content behind
+    }, 50);
 }
 
 export function hideSpinner() {
@@ -203,7 +209,7 @@ export function showError(msg) {
     });
 }
 
-export function renderSectionsTable(sections, onLoadEvents) {
+export function renderSectionsTable(sections, onSelectionChange) {
     let container = document.getElementById('sections-table-container');
     if (!container) {
         container = document.createElement('div');
@@ -239,26 +245,33 @@ export function renderSectionsTable(sections, onLoadEvents) {
     });
 
     html += `</tbody></table>
-            <button id="load-events-btn" class="btn btn-primary btn-sm w-100">Load Events for Selected Sections</button>
         </div>`;
     
     container.innerHTML = html;
     
-    // Regular load events button
-    const loadEventsBtn = document.getElementById('load-events-btn');
-    if (loadEventsBtn) {
-        loadEventsBtn.onclick = () => {
-            const selectedCheckboxes = document.querySelectorAll('.section-checkbox:checked');
-            const selectedSectionIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    // Add event listeners for automatic loading
+    const checkboxes = container.querySelectorAll('.section-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selectedSections = Array.from(container.querySelectorAll('.section-checkbox:checked'))
+                                        .map(cb => cb.value);
             
-            if (selectedSectionIds.length === 0) {
-                showError('Please select at least one section');
-                return;
+            if (selectedSections.length > 0) {
+                onSelectionChange(selectedSections);
+            } else {
+                // Clear events table when no sections selected
+                const eventsContainer = document.getElementById('events-table-container');
+                if (eventsContainer) {
+                    eventsContainer.innerHTML = `
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-calendar-alt"></i>
+                            <p class="mb-0 mt-2">Select sections to view events</p>
+                        </div>
+                    `;
+                }
             }
-            
-            onLoadEvents(selectedSectionIds);
-        };
-    }
+        });
+    });
 }
 
 export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = false) {
@@ -375,10 +388,7 @@ export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = f
         });
     }
     
-    html += `</tbody></table></div>
-        <button id="load-attendees-btn" class="btn btn-primary btn-sm w-100 mt-2 regular-content">
-            Show Attendees for Selected Events
-        </button>`;
+    html += `</tbody></table></div>`;
     
     container.innerHTML = html;
     
@@ -390,34 +400,37 @@ export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = f
     // Store events data for the callback
     container.eventsData = events;
     
-    // Regular load attendees button
-    const loadAttendeesBtn = document.getElementById('load-attendees-btn');
-    if (loadAttendeesBtn) {
-        loadAttendeesBtn.onclick = () => {
+    // Add event listeners for automatic loading
+    const checkboxes = container.querySelectorAll('.event-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
             const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
             const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
             const selectedEvents = selectedIndices.map(idx => events[idx]);
-            onLoadAttendees(selectedEvents);
-        };
-    }
-    
-    // Mini load attendees button (for collapsed sidebar) - FIX: Only show if collapsed
-    const loadAttendeesMini = document.getElementById('load-attendees-btn-mini');
-    if (loadAttendeesMini) {
-        // Check if sidebar is currently collapsed
-        const sidebar = document.getElementById('sidebar');
-        const isCollapsed = sidebar && sidebar.classList.contains('collapsed');
-        
-        // Only show if collapsed, otherwise hide
-        loadAttendeesMini.style.display = isCollapsed ? 'block' : 'none';
-        
-        loadAttendeesMini.onclick = () => {
-            const selectedCheckboxes = document.querySelectorAll('.event-checkbox:checked');
-            const selectedIndices = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.idx));
-            const selectedEvents = selectedIndices.map(idx => events[idx]);
-            onLoadAttendees(selectedEvents);
-        };
-    }
+            
+            if (selectedEvents.length > 0) {
+                onLoadAttendees(selectedEvents);
+            } else {
+                // Clear attendance panel when no events selected
+                const attendancePanel = document.getElementById('attendance-panel');
+                if (attendancePanel) {
+                    attendancePanel.innerHTML = `
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Attendance Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted text-center">
+                                    <i class="fas fa-users"></i><br>
+                                    Select events to view attendance details here.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        });
+    });
 
     // Add sortable headers
     addSortableHeaders('events-table', events, sortedEvents => renderEventsTable(sortedEvents, onLoadAttendees, forceMobileLayout));
