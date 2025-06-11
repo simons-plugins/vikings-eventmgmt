@@ -375,6 +375,11 @@ header {
 /* === SIDEBAR STYLES === */
 /* NOTE: Single clean sidebar implementation - floats on top */
 
+/* Hide sidebar toggle when not authenticated */
+.login-screen #sidebarToggle {
+    display: none !important;
+}
+
 /* Sidebar base styles - hidden by default, floating overlay */
 .sidebar {
     position: fixed;

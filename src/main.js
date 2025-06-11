@@ -244,6 +244,15 @@ function initializeSidebar() {
     });
 }
 
+// Hide sidebar toggle on login screen, show on main app
+function updateSidebarToggleVisibility() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        const isLoginScreen = document.body.classList.contains('login-screen');
+        sidebarToggle.style.display = isLoginScreen ? 'none' : 'block';
+    }
+}
+
 // === SECTION CACHING FUNCTIONALITY ===
 
 const SECTIONS_CACHE_KEY = 'viking_sections_cache';
@@ -480,15 +489,21 @@ async function checkForToken() {
             // Test the token by making a quick API call
             await getUserRoles();
             console.log('Token is valid, showing main UI');
+            document.body.classList.remove('login-screen');
+            updateSidebarToggleVisibility();
             showMainUI();
         } else {
             console.log('No token found, showing login');
+            document.body.classList.add('login-screen');
+            updateSidebarToggleVisibility();
             showLoginScreen();
         }
     } catch (error) {
         console.error('Token validation failed:', error);
         // Clear invalid token and show login
         sessionStorage.removeItem('access_token');
+        document.body.classList.add('login-screen');
+        updateSidebarToggleVisibility();
         showLoginScreen();
     }
 }
