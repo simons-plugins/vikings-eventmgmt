@@ -432,8 +432,6 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
             return { items: [] };
         }
 
-        console.log('Fetching flexi records for section:', sectionId, 'archived:', archived);
-
         const response = await fetch(`${BACKEND_URL}/get-flexi-records`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -448,7 +446,6 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
         const data = await handleAPIResponse(response, 'getFlexiRecords');
         if (data === null) return { items: [] }; // Token expired
 
-        console.log('Flexi records API response data:', data);
         return data;
 
     } catch (error) {

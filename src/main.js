@@ -406,17 +406,6 @@ async function handleSectionSelect(selectedSectionIds) {
             sectionIdToName[section.sectionid] = section.sectionname;
         });
         
-        // Fetch flexi records for each selected section (for console logging)
-        for (const sectionId of selectedSectionIds) {
-            try {
-                console.log(`=== Fetching Flexi Records for Section ${sectionId} (${sectionIdToName[sectionId]}) ===`);
-                const flexiRecords = await getFlexiRecords(sectionId);
-                console.log(`Flexi Records for ${sectionIdToName[sectionId]}:`, flexiRecords);
-            } catch (flexiError) {
-                console.error(`Failed to fetch flexi records for section ${sectionId}:`, flexiError);
-            }
-        }
-        
         // Fetch events for each selected section
         for (const sectionId of selectedSectionIds) {
             const termId = await getMostRecentTermId(sectionId);
