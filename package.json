@@ -27,6 +27,7 @@
   "homepage": "https://github.com/simons-plugins/vikings-eventmgmt#readme",
   "dependencies": {
     "@sentry/browser": "^7.120.0",
+    "@sentry/profiling-node": "^9.28.1",
     "dotenv": "^16.5.0",
     "express": "^5.1.0"
   },
