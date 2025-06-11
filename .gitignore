@@ -53,3 +53,25 @@ Thumbs.db
 # Temporary folders
 tmp/
 temp/
+
+# Production build files
+dist/
+build/
+
+# Package manager lock files (optional - comment out if you want to track them)
+# package-lock.json
+# yarn.lock
+
+# IDE and editor files
+.idea/
+*.swp
+*.swo
+*~
+
+# Test output
+test-results/
+playwright-report/
+
+# MacOS specific
+.Spotlight-V100
+.Trashes
