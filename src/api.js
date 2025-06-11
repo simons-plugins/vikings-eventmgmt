@@ -270,8 +270,8 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
         const response = await fetch(`${BACKEND_URL}/get-flexi-records`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                access_token: token, 
+            body: JSON.stringify({
+                access_token: token,
                 sectionid: sectionId,
                 archived: archived
             })
