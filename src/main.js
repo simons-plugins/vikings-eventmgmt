@@ -14,6 +14,7 @@ import {
     getMostRecentTermId,
     getEvents,
     getEventAttendance,
+    getFlexiRecords,
     getToken,
     clearToken
 } from './api.js';
@@ -397,6 +398,17 @@ async function handleSectionSelect(selectedSectionIds) {
         currentSections.forEach(section => {
             sectionIdToName[section.sectionid] = section.sectionname;
         });
+        
+        // Fetch flexi records for each selected section (for console logging)
+        for (const sectionId of selectedSectionIds) {
+            try {
+                console.log(`=== Fetching Flexi Records for Section ${sectionId} (${sectionIdToName[sectionId]}) ===`);
+                const flexiRecords = await getFlexiRecords(sectionId);
+                console.log(`Flexi Records for ${sectionIdToName[sectionId]}:`, flexiRecords);
+            } catch (flexiError) {
+                console.error(`Failed to fetch flexi records for section ${sectionId}:`, flexiError);
+            }
+        }
         
         // Fetch events for each selected section
         for (const sectionId of selectedSectionIds) {

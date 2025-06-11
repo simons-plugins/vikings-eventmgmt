@@ -49,8 +49,10 @@
     </div>
 
     <script>
-        const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
-        //const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+        // Use HTTP for local development, HTTPS for production
+        const BACKEND_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3001' 
+            : 'https://vikings-osm-event-manager.onrender.com';
         
         function updateStatus(message) {
             document.getElementById('status-message').textContent = message;
@@ -80,6 +82,36 @@
             .then(res => {
                 clearTimeout(timeoutWarning);
                 updateStatus('Processing response...');
+                console.log('Response status:', res.status);
+                console.log('Response headers:', res.headers);
+                
+                if (!res.ok) {
+                    return res.text().then(text => {
+                        console.error('Non-OK response body:', text);
+                        
+                        // Try to parse as JSON first
+                        try {
+                            const jsonError = JSON.parse(text);
+                            throw new Error(`Server error ${res.status}: ${jsonError.error || jsonError.message || 'Unknown error'}`);
+                        } catch (parseError) {
+                            // If not JSON, it's probably an HTML error page
+                            if (text.includes('<!doctype') || text.includes('<html')) {
+                                throw new Error(`Server error ${res.status}: Backend returned HTML error page (likely OSM API issue)`);
+                            } else {
+                                throw new Error(`Server error ${res.status}: ${text.substring(0, 200)}`);
+                            }
+                        }
+                    });
+                }
+                
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return res.text().then(text => {
+                        console.error('Non-JSON response:', text);
+                        throw new Error(`Server returned HTML instead of JSON: ${text.substring(0, 200)}`);
+                    });
+                }
+                
                 return res.json();
             })
             .then(data => {
@@ -107,12 +139,25 @@
                 clearTimeout(timeoutWarning);
                 console.error('Auth error:', error);
                 document.querySelector('.card-body').innerHTML = `
-                    <h2 class="h4 text-danger mb-3">Connection Error</h2>
+                    <h2 class="h4 text-danger mb-3">Authentication Error</h2>
                     <p class="text-muted mb-4">
-                        Unable to connect to the authentication server.<br>
-                        This could be due to slow network or server issues.
+                        There was an error during authentication.<br>
+                        <strong>Error:</strong> ${error.message}
                     </p>
-                    <a href="index.html" class="btn btn-primary">Try Again</a>
+                    <details class="text-left mt-3">
+                        <summary>Technical Details</summary>
+                        <div class="small mt-2 p-2 bg-light">
+                            <strong>Error Type:</strong> ${error.name || 'Unknown'}<br>
+                            <strong>Error Message:</strong> ${error.message}<br>
+                            <strong>Authorization Code:</strong> ${code ? 'Present' : 'Missing'}<br>
+                            <strong>Backend URL:</strong> ${BACKEND_URL}/exchange-token<br>
+                            <strong>Time:</strong> ${new Date().toISOString()}
+                        </div>
+                    </details>
+                    <div class="mt-4">
+                        <a href="index.html" class="btn btn-primary me-2">Try Again</a>
+                        <button onclick="window.location.reload()" class="btn btn-outline-secondary">Reload Page</button>
+                    </div>
                 `;
             });
         } else {

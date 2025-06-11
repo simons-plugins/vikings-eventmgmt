@@ -1,4 +1,10 @@
-const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+// Use local backend for testing, production for deployment
+const BACKEND_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://vikings-osm-event-manager.onrender.com'
+    : 'https://localhost:3001';  // Force HTTPS for local backend
+
+console.log('Backend URL:', BACKEND_URL);
+console.log('Frontend protocol:', window.location.protocol);
 
 export function getToken() {
     return sessionStorage.getItem('access_token'); // <-- changed
@@ -251,5 +257,78 @@ export async function getEventAttendance(sectionId, eventId, termId) {
     } catch (error) {
         console.error('Error fetching event attendance:', error);
         throw error;
+    }
+}
+
+export async function getFlexiRecords(sectionId, archived = 'n') {
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return { items: [] };
+        }
+
+        console.log('Fetching flexi records for section:', sectionId, 'archived:', archived);
+
+        const response = await fetch(`${BACKEND_URL}/get-flexi-records`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                access_token: token, 
+                sectionid: sectionId,
+                archived: archived
+            })
+        });
+
+        console.log('Flexi records API response status:', response.status);
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleTokenExpiration();
+                return { items: [] };
+            }
+            const errorText = await response.text();
+            console.error('Flexi records API error response:', errorText);
+            throw new Error(`Failed to fetch flexi records: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('Flexi records API response data:', data);
+        
+        // Check for token expiration in response data
+        if (!isTokenValid(data)) {
+            handleTokenExpiration();
+            return { items: [] };
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching flexi records:', error);
+        throw error;
+    }
+}
+
+// Test backend connectivity
+export async function testBackendConnection() {
+    try {
+        console.log('Testing backend connection to:', BACKEND_URL);
+        const response = await fetch(`${BACKEND_URL}/health`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        console.log('Backend connection test - Status:', response.status);
+        
+        if (response.ok) {
+            const data = await response.text();
+            console.log('Backend connection test - Response:', data);
+            return true;
+        } else {
+            console.error('Backend connection test failed:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('Backend connection test error:', error);
+        return false;
     }
 }
