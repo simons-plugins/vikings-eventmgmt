@@ -3,28 +3,52 @@ on: [push]
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
-    # Runs tests in parallel with matrix strategy https://docs.cypress.io/guides/guides/parallelization
-    # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
-    # Also see warning here https://github.com/cypress-io/github-action#parallel
-    strategy:
-      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
-      matrix:
-        containers: [1, 2] # Uses 2 parallel instances
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Verify Cypress files exist
+        run: |
+          echo "=== Checking for Cypress test files ==="
+          pwd
+          echo "Current directory contents:"
+          ls -la
+          echo "Cypress directory:"
+          ls -la cypress/ || echo "cypress/ directory not found"
+          echo "Cypress e2e directory:"
+          ls -la cypress/e2e/ || echo "cypress/e2e/ directory not found"
+          echo "Looking for .cy.js files:"
+          find . -name "*.cy.js" -type f || echo "No .cy.js files found"
+          echo "Cypress config file:"
+          ls -la cypress.config.js || echo "cypress.config.js not found"
+          
+      - name: Debug Cypress installation
+        run: |
+          echo "=== Cypress Debug Info ==="
+          npx cypress version
+          npx cypress verify
+      
       - name: Cypress run
         # Uses the official Cypress GitHub action https://github.com/cypress-io/github-action
         uses: cypress-io/github-action@v6
         with:
-          # Starts web server for E2E tests - replace with your own server invocation
-          # https://docs.cypress.io/guides/continuous-integration/introduction#Boot-your-server
+          # Don't install again since we already did npm ci
+          install: false
+          # Starts web server for E2E tests
           start: npm start
-          wait-on: 'http://localhost:3000' # Wait for local server to start
+          wait-on: 'http://localhost:3000'
           # Records to Cypress Cloud 
-          # https://docs.cypress.io/guides/cloud/projects#Set-up-a-project-to-record
           record: true
-          parallel: true # Runs test in parallel using settings above
+          parallel: false # Disable parallel for debugging
         env:
           # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
           # in GitHub repo → Settings → Secrets → Actions
