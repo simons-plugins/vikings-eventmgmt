@@ -3,7 +3,7 @@ import { defineConfig } from 'cypress'
 export default defineConfig({
   projectId: 'qqogix',
   e2e: {
-    baseUrl: 'https://localhost:3000',
+    baseUrl: process.env.CYPRESS_BASE_URL || 'https://localhost:3000',
     viewportWidth: 1280,
     viewportHeight: 720,
     video: true,

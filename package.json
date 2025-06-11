@@ -11,6 +11,8 @@
     "test:verbose": "jest --verbose",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
+    "cypress:run:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress run",
+    "cypress:open:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress open",
     "dev": "node https-server.js"
   },
   "repository": {
