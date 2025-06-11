@@ -5,6 +5,9 @@
 // 'gradient' = Colorful gradient spinner (modern, vibrant)
 const PREFERRED_SPINNER = 'ring'; // Change this to your preference
 
+// Initialize error monitoring
+import './sentry.js';
+
 // Import functions
 import {
     getUserRoles,

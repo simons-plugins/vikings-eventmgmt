@@ -23,5 +23,33 @@ cypress/screenshots/
 
 # VS Code settings
 .vscode/
+
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Sentry wizard error logs
+sentry-wizard-installation-error-*.log
+
+# Sentry CLI configuration
+.sentryclirc
+sentry.properties
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Temporary folders
+tmp/
+temp/
