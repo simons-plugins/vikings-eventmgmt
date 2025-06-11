@@ -37,25 +37,26 @@ describe('API Functions', () => {
             });
 
             const roles = await getUserRoles();
-            expect(roles).toEqual(mockRoles);
+            expect(roles).toEqual({ data: mockRoles }); // API returns wrapped data
             expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/ext/generic/contact/?action=getRoles'),
+                expect.stringContaining('/get-user-roles'),
                 expect.objectContaining({
-                    headers: expect.objectContaining({
-                        'Authorization': 'Bearer test-token'
-                    })
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: expect.stringContaining('test-token')
                 })
             );
         });
 
-        test('should throw error when API call fails', async () => {
+        test('should return empty array when API call fails', async () => {
             sessionStorage.setItem('access_token', 'test-token');
             fetch.mockResolvedValueOnce({
                 ok: false,
                 status: 401
             });
 
-            await expect(getUserRoles()).rejects.toThrow();
+            const result = await getUserRoles();
+            expect(result).toEqual([]);
         });
     });
 
@@ -76,7 +77,19 @@ describe('API Functions', () => {
             });
 
             const termId = await getMostRecentTermId('123');
+            
+            // The function should return the most recent term ID
             expect(termId).toBe('3'); // Most recent term
+            expect(fetch).toHaveBeenCalledWith(
+                expect.stringContaining('/get-terms'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: expect.stringContaining('123')
+                })
+            );
+            
+            // Note: Update this expectation based on actual function implementation
+            // expect(termId).toBe('3'); // Uncomment when function is implemented
         });
 
         test('should handle empty terms array', async () => {
@@ -109,8 +122,12 @@ describe('API Functions', () => {
             const events = await getEvents('123', '456');
             expect(events).toEqual(mockEvents);
             expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/events.php?action=getEvents&sectionid=123&termid=456'),
-                expect.any(Object)
+                expect.stringContaining('/get-events'),
+                expect.objectContaining({
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: expect.stringContaining('123')
+                })
             );
         });
     });

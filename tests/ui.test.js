@@ -8,25 +8,19 @@ import {
     hideSpinner
 } from '../src/ui.js';
 
-// Mock DOM
-document.body.innerHTML = `
-    <div id="sections-table-container"></div>
-    <div id="events-table-container"></div>
-    <div id="attendance-panel"></div>
-    <div id="app-content"></div>
-    <div id="loading-overlay" style="display: none;">
-        <div class="loading-text">Loading...</div>
-        <div id="spinner-container"></div>
-    </div>
-`;
-
 describe('UI Functions', () => {
     beforeEach(() => {
-        // Reset DOM
-        document.getElementById('sections-table-container').innerHTML = '';
-        document.getElementById('events-table-container').innerHTML = '';
-        document.getElementById('attendance-panel').innerHTML = '';
-        document.getElementById('app-content').innerHTML = '';
+        // Create fresh DOM elements for each test
+        document.body.innerHTML = `
+            <div id="sections-table-container"></div>
+            <div id="events-table-container"></div>
+            <div id="attendance-panel"></div>
+            <div id="app-content"></div>
+            <div id="loading-overlay" style="display: none;">
+                <div class="loading-text">Loading...</div>
+                <div id="spinner-container"></div>
+            </div>
+        `;
     });
 
     describe('renderSectionsTable', () => {

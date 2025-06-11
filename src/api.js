@@ -6,18 +6,30 @@ export function getToken() {
 
 // Add token validation function:
 export function isTokenValid(responseData) {
-    // Check if the response indicates token expiration
-    if (responseData && responseData.status === false && 
-        responseData.error && responseData.error.code === 'access-error-2') {
+    // Check if the response indicates token expiration or authentication errors
+    if (responseData && (
+        (responseData.status === false && responseData.error && responseData.error.code === 'access-error-2') ||
+        responseData.error === 'Invalid access token' ||
+        responseData.message === 'Unauthorized' ||
+        responseData.error === 'Token expired'
+    )) {
         return false;
     }
     return true;
 }
 
 export function handleTokenExpiration() {
+    console.log('Token expired - redirecting to login');
     // Clear expired token
     sessionStorage.removeItem('access_token');
-    // Redirect to login
+    
+    // Clear any cached data
+    localStorage.removeItem('viking_sections_cache');
+    
+    // Show a message to the user
+    alert('Your session has expired. Please log in again.');
+    
+    // Force a full page reload to reset the app state
     window.location.reload();
 }
 
@@ -34,68 +46,199 @@ export async function getTermsForSection(sectionId) {
 }
 
 export async function getMostRecentTermId(sectionId) {
-    const terms = await getTermsForSection(sectionId);
-    if (!terms.length) return null;
-    terms.sort((a, b) => new Date(b.enddate) - new Date(a.enddate));
-    return terms[0].termid;
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return null;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/get-terms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                access_token: token,
+                sectionid: sectionId 
+            })
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleTokenExpiration();
+                return null;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Terms API response for section', sectionId, ':', data);
+        
+        // Check for token expiration in response data
+        if (!isTokenValid(data)) {
+            handleTokenExpiration();
+            return null;
+        }
+        
+        // Handle different response formats
+        let termsArray = null;
+        
+        if (data.items && Array.isArray(data.items)) {
+            // Format: { items: [...] }
+            termsArray = data.items;
+        } else if (data[sectionId] && Array.isArray(data[sectionId])) {
+            // Format: { "sectionId": [...] }
+            termsArray = data[sectionId];
+        } else if (Array.isArray(data)) {
+            // Format: [...]
+            termsArray = data;
+        } else {
+            console.warn('Unexpected terms response format:', data);
+            return null;
+        }
+        
+        if (!termsArray || termsArray.length === 0) {
+            console.warn('No terms found for section:', sectionId);
+            return null;
+        }
+
+        // Sort terms by start date (most recent first)
+        const sortedTerms = termsArray.sort((a, b) => {
+            const dateA = new Date(a.startdate);
+            const dateB = new Date(b.startdate);
+            return dateB - dateA; // Descending order (newest first)
+        });
+
+        const mostRecentTerm = sortedTerms[0];
+        console.log('Most recent term found for section', sectionId, ':', mostRecentTerm);
+        return mostRecentTerm.termid;
+
+    } catch (error) {
+        console.error('Error fetching most recent term ID:', error);
+        return null;
+    }
 }
 
 // Update your getUserRoles function to check for token expiration:
 export async function getUserRoles() {
-    const token = getToken();
-    const response = await fetch(`${BACKEND_URL}/get-user-roles`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: token })
-    });
-    
-    const data = await response.json();
-    
-    // Check for token expiration
-    if (!isTokenValid(data)) {
-        handleTokenExpiration();
-        return [];
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return [];
+        }
+
+        const response = await fetch(`${BACKEND_URL}/get-user-roles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token: token })
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleTokenExpiration();
+                return [];
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Check for token expiration in response data
+        if (!isTokenValid(data)) {
+            handleTokenExpiration();
+            return [];
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching user roles:', error);
+        // If it's a network error, don't redirect - might be temporary
+        throw error;
     }
-    
-    return data;
 }
 
 export async function getEvents(sectionid, termid) {
-    const token = getToken();
-    const resp = await fetch(`${BACKEND_URL}/get-events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: token, sectionid, termid })
-    });
-    return resp.json();
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return { items: [] };
+        }
+
+        const response = await fetch(`${BACKEND_URL}/get-events`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token: token, sectionid, termid })
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleTokenExpiration();
+                return { items: [] };
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Check for token expiration in response data
+        if (!isTokenValid(data)) {
+            handleTokenExpiration();
+            return { items: [] };
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching events:', error);
+        throw error;
+    }
 }
 
 export async function getEventAttendance(sectionId, eventId, termId) {
-    const token = getToken();
-    if (!token) throw new Error('No access token');
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return { items: [] };
+        }
 
-    console.log('API call with params:', { sectionId, eventId, termId });
+        console.log('API call with params:', { sectionId, eventId, termId });
 
-    const response = await fetch(`${BACKEND_URL}/get-event-attendance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            access_token: token, 
-            sectionid: sectionId, 
-            eventid: eventId,
-            termid: termId  // Add the missing termid parameter
-        })
-    });
+        const response = await fetch(`${BACKEND_URL}/get-event-attendance`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                access_token: token, 
+                sectionid: sectionId, 
+                eventid: eventId,
+                termid: termId
+            })
+        });
 
-    console.log('API response status:', response.status);
+        console.log('API response status:', response.status);
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API error response:', errorText);
-        throw new Error(`Failed to fetch event attendance: ${response.status} - ${errorText}`);
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                handleTokenExpiration();
+                return { items: [] };
+            }
+            const errorText = await response.text();
+            console.error('API error response:', errorText);
+            throw new Error(`Failed to fetch event attendance: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('API response data:', data);
+        
+        // Check for token expiration in response data
+        if (!isTokenValid(data)) {
+            handleTokenExpiration();
+            return { items: [] };
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error fetching event attendance:', error);
+        throw error;
     }
-
-    const data = await response.json();
-    console.log('API response data:', data);
-    return data;
 }

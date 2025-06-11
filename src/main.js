@@ -50,6 +50,10 @@ function showLoginScreen() {
     const existingLoginBtn = document.getElementById('osm-login-btn');
     if (existingLoginBtn) {
         // Login UI is already showing, just ensure it has the click handler
+        const mainContainer = document.querySelector('main.container') || document.querySelector('main');
+        if (mainContainer) {
+            mainContainer.style.display = 'block';
+        }
         existingLoginBtn.onclick = () => {
             console.log('Login button clicked, redirecting to OSM...');
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
@@ -65,12 +69,13 @@ function showLoginScreen() {
     }
 
     // If no existing login button, restore the original login structure
-    const mainContainer = document.querySelector('main.container');
+    const mainContainer = document.querySelector('main.container') || document.querySelector('main');
     if (!mainContainer) {
         console.error('Main container not found for login screen');
         return;
     }
     
+    mainContainer.style.display = 'block';
     mainContainer.className = 'container';
     mainContainer.innerHTML = `
         <div class="row justify-content-center">
@@ -461,53 +466,76 @@ async function handleEventSelect(selectedEvents) {
 async function checkForToken() {
     console.log('Checking for token...');
     
+    // Show loading state instead of login screen initially
+    showLoadingState();
+    
     try {
         // Check if we have a valid token
-        const token = await getToken();
+        const token = getToken();
         if (token) {
-            console.log('Token found, showing main UI');
+            console.log('Token found, testing validity...');
+            // Test the token by making a quick API call
+            await getUserRoles();
+            console.log('Token is valid, showing main UI');
             showMainUI();
         } else {
             console.log('No token found, showing login');
             showLoginScreen();
         }
     } catch (error) {
-        console.error('Error checking token:', error);
+        console.error('Token validation failed:', error);
+        // Clear invalid token and show login
+        sessionStorage.removeItem('access_token');
         showLoginScreen();
     }
+}
+
+function showLoadingState() {
+    const mainContainer = document.querySelector('main.container') || document.querySelector('main');
+    if (!mainContainer) {
+        console.error('Main container not found for loading state');
+        return;
+    }
+    
+    // Make container visible and show loading
+    mainContainer.style.display = 'block';
+    mainContainer.innerHTML = `
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading application...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // Make sure your DOMContentLoaded listener looks like this:
 
 document.addEventListener('DOMContentLoaded', async function initializeApp() {
     try {
+        // Hide main container initially to prevent flash
+        const mainContainer = document.querySelector('main.container') || document.querySelector('main');
+        if (mainContainer) {
+            mainContainer.style.display = 'none';
+        }
+        
         // Set the preferred spinner type
         setDefaultSpinner(PREFERRED_SPINNER);
         
         // Check for elements that should exist
-        const mainContainer = document.querySelector('main');
         if (!mainContainer) {
             console.error('Main container not found');
             return;
         }
         
-        // Check for existing login button and replace showLoginScreen logic
-        const existingLoginBtn = document.getElementById('osm-login-btn');
-        if (existingLoginBtn) {
-            existingLoginBtn.addEventListener('click', () => {
-                console.log('Login button clicked, redirecting to OSM...');
-                const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
-                    `client_id=${clientId}&` +
-                    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                    `scope=${encodeURIComponent(scope)}&` +
-                    `response_type=code`;
-                
-                console.log('Auth URL:', authUrl);
-                window.location.href = authUrl;
-            });
-        }
-        
-        // Check for token and potentially show main UI
+        // Don't set up login button immediately - let checkForToken decide what to show
+        // Check for token and show appropriate UI
         await checkForToken();
         
     } catch (error) {

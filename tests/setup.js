@@ -9,44 +9,6 @@ global.console = {
   error: jest.fn(),
 };
 
-// Mock window.location properly for JSDOM
-Object.defineProperty(window, 'location', {
-  value: {
-    href: 'http://localhost:3000',
-    origin: 'http://localhost:3000',
-    protocol: 'http:',
-    host: 'localhost:3000',
-    hostname: 'localhost',
-    port: '3000',
-    pathname: '/',
-    search: '',
-    hash: '',
-    reload: jest.fn(),
-    assign: jest.fn(),
-    replace: jest.fn()
-  },
-  writable: true,
-  configurable: true
-});
-
-// Suppress JSDOM navigation warnings
-const originalConsoleError = console.error;
-beforeEach(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Not implemented: navigation')
-    ) {
-      return;
-    }
-    originalConsoleError.call(console, ...args);
-  };
-});
-
-afterEach(() => {
-  console.error = originalConsoleError;
-});
-
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),
@@ -80,6 +42,25 @@ Object.defineProperty(window, 'innerWidth', {
   writable: true,
   configurable: true,
   value: 1024,
+});
+
+// Suppress JSDOM warnings about navigation
+const originalConsoleError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      (args[0].includes('Not implemented: navigation') ||
+       args[0].includes('Error: Not implemented'))
+    ) {
+      return; // Suppress JSDOM warnings
+    }
+    originalConsoleError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalConsoleError;
 });
 
 // Clean up after each test

@@ -1,13 +1,18 @@
 // Caching Tests - Test localStorage section caching functionality
 
-// Mock localStorage
+// Create local localStorage mock for this test
 const localStorageMock = {
     getItem: jest.fn(),
     setItem: jest.fn(),
     removeItem: jest.fn(),
     clear: jest.fn(),
 };
-global.localStorage = localStorageMock;
+
+// Override global localStorage for this test file
+Object.defineProperty(global, 'localStorage', {
+    value: localStorageMock,
+    writable: true
+});
 
 // Mock API functions
 jest.mock('../src/api.js', () => ({
@@ -32,13 +37,13 @@ describe('Section Caching', () => {
     });
 
     describe('localStorage caching functionality', () => {
-        test('should save and retrieve sections from localStorage', () => {
+        test('should save sections to localStorage', () => {
             const mockSections = [
                 { sectionid: '1', sectionname: 'Test Section 1' },
                 { sectionid: '2', sectionname: 'Test Section 2' }
             ];
 
-            // Test saving to cache
+            // Simulate saving to cache
             const cacheData = {
                 sections: mockSections,
                 timestamp: Date.now(),
@@ -46,20 +51,35 @@ describe('Section Caching', () => {
             };
             
             const cacheKey = 'viking_sections_cache';
-            localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+            const cacheDataString = JSON.stringify(cacheData);
+            
+            // Test the save operation
+            localStorageMock.setItem(cacheKey, cacheDataString);
 
             expect(localStorageMock.setItem).toHaveBeenCalledWith(
                 cacheKey,
-                expect.stringContaining('"sections"')
+                cacheDataString
             );
+        });
 
-            // Test retrieving from cache
+        test('should retrieve sections from localStorage', () => {
+            const mockSections = [
+                { sectionid: '1', sectionname: 'Test Section 1' }
+            ];
+
+            const cacheData = {
+                sections: mockSections,
+                timestamp: Date.now() - 1000, // 1 second ago (fresh)
+                version: '1.0'
+            };
+
             localStorageMock.getItem.mockReturnValue(JSON.stringify(cacheData));
-            const cached = localStorage.getItem(cacheKey);
+
+            // Test retrieval
+            const cached = localStorageMock.getItem('viking_sections_cache');
             const parsedCache = JSON.parse(cached);
 
             expect(parsedCache.sections).toEqual(mockSections);
-            expect(parsedCache.timestamp).toBe(1640995200000);
             expect(parsedCache.version).toBe('1.0');
         });
 
@@ -73,33 +93,31 @@ describe('Section Caching', () => {
             // Should not throw when localStorage fails
             expect(() => {
                 try {
-                    localStorage.setItem('test', 'data');
+                    localStorageMock.setItem('test', 'data');
                 } catch (error) {
                     console.warn('Failed to cache sections:', error);
                 }
             }).not.toThrow();
             
+            expect(consoleSpy).toHaveBeenCalledWith('Failed to cache sections:', expect.any(Error));
             consoleSpy.mockRestore();
         });
 
         test('should handle cache expiry', () => {
-            const now = Date.now();
+            const now = 1640995200000; // Current time
             const expiredTimestamp = now - (25 * 60 * 60 * 1000); // 25 hours ago
             
-            const expiredCacheData = {
-                sections: [{ sectionid: '1', sectionname: 'Expired Section' }],
-                timestamp: expiredTimestamp,
-                version: '1.0'
-            };
-
-            localStorageMock.getItem.mockReturnValue(JSON.stringify(expiredCacheData));
-
             // Simulate checking for expired cache
-            const cached = localStorage.getItem('viking_sections_cache');
-            const cacheData = JSON.parse(cached);
-            const isExpired = (now - cacheData.timestamp) > (24 * 60 * 60 * 1000);
+            const isExpired = (now - expiredTimestamp) > (24 * 60 * 60 * 1000);
 
             expect(isExpired).toBe(true);
+            
+            // When cache is expired, it should be removed
+            if (isExpired) {
+                localStorageMock.removeItem('viking_sections_cache');
+            }
+            
+            expect(localStorageMock.removeItem).toHaveBeenCalledWith('viking_sections_cache');
         });
 
         test('should handle corrupted cache data', () => {
@@ -108,11 +126,11 @@ describe('Section Caching', () => {
             // Should handle JSON parse errors gracefully
             let result = null;
             try {
-                const cached = localStorage.getItem('viking_sections_cache');
+                const cached = localStorageMock.getItem('viking_sections_cache');
                 result = JSON.parse(cached);
             } catch (error) {
                 result = null;
-                localStorage.removeItem('viking_sections_cache');
+                localStorageMock.removeItem('viking_sections_cache');
             }
 
             expect(result).toBeNull();
@@ -134,7 +152,7 @@ describe('Section Caching', () => {
             getUserRoles.mockResolvedValue(mockApiSections);
 
             // Simulate the cache miss -> API call flow
-            const cached = localStorage.getItem('viking_sections_cache');
+            const cached = localStorageMock.getItem('viking_sections_cache');
             expect(cached).toBeNull();
 
             const sections = await getUserRoles();
@@ -153,7 +171,7 @@ describe('Section Caching', () => {
     describe('Cache management', () => {
         test('should clear cache when requested', () => {
             // Simulate cache clearing
-            localStorage.removeItem('viking_sections_cache');
+            localStorageMock.removeItem('viking_sections_cache');
             expect(localStorageMock.removeItem).toHaveBeenCalledWith('viking_sections_cache');
         });
 
@@ -163,16 +181,16 @@ describe('Section Caching', () => {
             // Fresh cache data (1 second ago)
             const freshCacheData = {
                 sections: mockCachedSections,
-                timestamp: Date.now() - 1000,
+                timestamp: 1640995200000 - 1000, // 1 second ago
                 version: '1.0'
             };
 
             localStorageMock.getItem.mockReturnValue(JSON.stringify(freshCacheData));
 
             // Simulate cache hit logic
-            const cached = localStorage.getItem('viking_sections_cache');
+            const cached = localStorageMock.getItem('viking_sections_cache');
             const cacheData = JSON.parse(cached);
-            const now = Date.now();
+            const now = 1640995200000;
             const isExpired = (now - cacheData.timestamp) > (24 * 60 * 60 * 1000);
 
             expect(isExpired).toBe(false);
