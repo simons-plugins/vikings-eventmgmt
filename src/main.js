@@ -14,7 +14,8 @@ import {
     getMostRecentTermId,
     getEvents,
     getEventAttendance,
-    getToken
+    getToken,
+    clearToken
 } from './api.js';
 import {
     showSpinner,
@@ -86,7 +87,7 @@ function showLoginScreen() {
                 <div class="card shadow-sm mb-4">
                     <div class="card-body text-center">
                         <button id="osm-login-btn"
-                            class="btn btn-primary btn-lg w-100 mb-3"
+                            class="btn btn-primary btn-lg mb-3"
                             style="font-size:1.5em; white-space: normal; line-height: 1.2;">
                             Login with<br>Online Scout Manager (OSM)
                         </button>
@@ -174,6 +175,9 @@ function showMainUI() {
     // Auto-load sections when main UI is shown
     loadSectionsFromCacheOrAPI();
 
+    // Add logout button to sidebar
+    addLogoutButton();
+
     console.log('Main UI initialized - ready for sidebar interaction');
 }
 
@@ -250,6 +254,24 @@ function updateSidebarToggleVisibility() {
     if (sidebarToggle) {
         const isLoginScreen = document.body.classList.contains('login-screen');
         sidebarToggle.style.display = isLoginScreen ? 'none' : 'block';
+    }
+}
+
+// Add logout functionality
+function addLogoutButton() {
+    const sidebar = document.querySelector('.sidebar-content');
+    if (sidebar && !document.getElementById('logout-btn')) {
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-btn';
+        logoutBtn.className = 'btn btn-outline-danger btn-sm w-100 mt-3';
+        logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Logout';
+        logoutBtn.onclick = () => {
+            if (confirm('Are you sure you want to logout?')) {
+                clearToken();
+                window.location.reload();
+            }
+        };
+        sidebar.appendChild(logoutBtn);
     }
 }
 

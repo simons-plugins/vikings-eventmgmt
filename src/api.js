@@ -33,6 +33,17 @@ export function handleTokenExpiration() {
     window.location.reload();
 }
 
+// Clear authentication token (logout)
+export function clearToken() {
+    sessionStorage.removeItem('access_token');
+    console.log('Authentication token cleared');
+}
+
+// Check if user is authenticated
+export function isAuthenticated() {
+    return !!getToken();
+}
+
 export async function getTermsForSection(sectionId) {
     const token = getToken();
     if (!token) return [];
