@@ -28,7 +28,10 @@
     <link rel="stylesheet" href="styles.css">
     
     <!-- Sentry -->
-    <script src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" crossorigin="anonymous"></script>
+    <script 
+        src="https://browser.sentry-cdn.com/7.120.0/bundle.tracing.min.js" 
+        crossorigin="anonymous"
+    ></script>
     <script>
       Sentry.init({ 
         dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544',
@@ -36,6 +39,16 @@
         tracesSampleRate: 1.0,
         release: 'vikings-eventmgmt@1.0.0'
       });
+    </script>
+    <script>
+  // Guard against window.Sentry not being available, e.g. due to Ad-blockers
+  window.Sentry &&
+    Sentry.onLoad(function () {
+      // Inside of this callback,
+      // we guarantee that `Sentry` is fully loaded and all APIs are available
+      const client = Sentry.getClient();
+      // do something custom here
+    });
     </script>
 </head>
 <body>
