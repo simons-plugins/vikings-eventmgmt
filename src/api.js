@@ -26,11 +26,13 @@ function logRateLimitInfo(responseData, apiName) {
             const osm = info.osm;
             const percentUsed = osm.limit > 0 ? ((osm.limit - osm.remaining) / osm.limit * 100).toFixed(1) : 0;
             
-            console.log(`🔄 ${apiName} OSM Rate Limit:`, {
+            console.group(`🔄 ${apiName} Rate Limit Status`);
+            console.log(`📊 OSM API:`, {
                 remaining: `${osm.remaining}/${osm.limit}`,
                 percentUsed: `${percentUsed}%`,
-                window: osm.window,
-                available: osm.available
+                window: osm.window || 'per hour',
+                available: osm.available,
+                rateLimited: osm.rateLimited || false
             });
             
             // Warn when getting close to OSM limit
@@ -46,11 +48,18 @@ function logRateLimitInfo(responseData, apiName) {
         // Log backend rate limit info (less critical but useful)
         if (info.backend) {
             const backend = info.backend;
-            console.log(`🔄 ${apiName} Backend Rate Limit:`, {
+            const backendPercentUsed = backend.limit > 0 ? (((backend.limit - backend.remaining) / backend.limit) * 100).toFixed(1) : 0;
+            
+            console.log(`🖥️ Backend API:`, {
                 remaining: `${backend.remaining}/${backend.limit}`,
-                window: backend.window
+                percentUsed: `${backendPercentUsed}%`,
+                window: backend.window || 'per minute'
             });
         }
+        
+        console.groupEnd();
+    } else {
+        console.log(`📊 ${apiName}: No rate limit info available`);
     }
 }
 
@@ -290,7 +299,16 @@ export async function getUserRoles() {
         });
         
         const data = await handleAPIResponseWithRateLimit(response, 'getUserRoles');
-        return data || [];
+        if (!data) return [];
+        
+        // Handle the response format - convert object with numbered keys to array
+        // Remove _rateLimitInfo from the data before processing
+        const { _rateLimitInfo, ...sectionsData } = data;
+        
+        // Convert object with numbered keys to array
+        const sectionsArray = Object.values(sectionsData);
+        
+        return sectionsArray;
         
     } catch (error) {
         console.error('Error fetching user roles:', error);
