@@ -13,10 +13,7 @@
     "cypress:run": "cypress run",
     "cypress:run:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress run",
     "cypress:open:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress open",
-    "dev": "node https-server.js",
-    "build": "chmod +x build-with-sourcemaps.sh && ./build-with-sourcemaps.sh",
-    "build:prod": "npm run build && npx sentry-cli releases finalize vikings-eventmgmt@$(date +%s)",
-    "deploy": "npm run build:prod"
+    "sourcemaps": "chmod +x add-inline-sourcemaps.sh && ./add-inline-sourcemaps.sh"
   },
   "repository": {
     "type": "git",
