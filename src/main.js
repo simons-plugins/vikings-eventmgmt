@@ -603,92 +603,288 @@ function switchAttendanceTab(tabType) {
 // Make tab switching globally available
 window.switchAttendanceTab = switchAttendanceTab;
 
-// Render original summary attendance table (optimized for performance)
+// Render original summary attendance table (using ui.js logic)
 function renderSummaryAttendanceTable(attendees) {
     const summaryContent = document.getElementById('summary-content');
     if (!summaryContent) return;
 
     if (attendees.length === 0) {
         summaryContent.innerHTML = `
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0">
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Name</th>
-                            <th>Section</th>
-                            <th>Event</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td colspan="5" class="text-center py-4">
-                                <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
-                                <p class="text-muted mt-2">No attendance records found.</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <p class="text-muted text-center">
+                No attendees found for the selected events.
+            </p>
         `;
         return;
     }
 
-    // Build HTML efficiently using array join (faster than string concatenation)
-    const htmlParts = [
-        `<div class="table-responsive">
-            <table class="table table-striped table-hover mb-0">
-                <thead class="thead-dark">
+    // Group attendees by person (first + last name) - copied from ui.js logic
+    const attendeesByPerson = {};
+    attendees.forEach(attendee => {
+        const personKey = `${attendee.firstname} ${attendee.lastname}`;
+        if (!attendeesByPerson[personKey]) {
+            attendeesByPerson[personKey] = {
+                firstname: attendee.firstname,
+                lastname: attendee.lastname,
+                events: [],
+                totalYes: 0,
+                totalNo: 0
+            };
+        }
+        
+        attendeesByPerson[personKey].events.push(attendee);
+        if (attendee.attending === 'Yes') {
+            attendeesByPerson[personKey].totalYes++;
+        } else {
+            attendeesByPerson[personKey].totalNo++;
+        }
+    });
+
+    // Get unique values for filters
+    const uniqueSections = [...new Set(attendees.map(a => a.sectionname))];
+    const uniqueEvents = [...new Set(attendees.map(a => a._eventName))];
+    const uniqueStatuses = [...new Set(attendees.map(a => a.attending))];
+
+    // Check if mobile
+    const isMobile = window.innerWidth <= 767;
+
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Attendance Summary</h6>
+            <small class="text-muted">
+                <span id="summary-attendee-count">${Object.keys(attendeesByPerson).length}</span> person(s), 
+                <span id="summary-event-count">${attendees.length}</span> event record(s)
+            </small>
+        </div>
+        
+        <!-- Filter Controls -->
+        <div class="row mb-3">
+            <div class="col-md-3 mb-2">
+                <select id="summary-section-filter" class="form-select form-select-sm">
+                    <option value="">All Sections</option>
+                    ${uniqueSections.map(section => `<option value="${section}">${section}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <select id="summary-event-filter" class="form-select form-select-sm">
+                    <option value="">All Events</option>
+                    ${uniqueEvents.map(event => `<option value="${event}">${event}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <select id="summary-status-filter" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    ${uniqueStatuses.map(status => `<option value="${status}">${status}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <input type="text" id="summary-name-filter" class="form-control form-control-sm" placeholder="Search name...">
+            </div>
+        </div>
+        
+        <!-- Clear Filters Button -->
+        <div class="mb-3">
+            <button id="summary-clear-filters-btn" class="btn btn-outline-secondary btn-sm">Clear Filters</button>
+        </div>
+        
+        <!-- Attendance Table -->
+        <div class="table-responsive">
+            <table id="summary-attendance-table" class="table table-striped table-sm">`;
+
+    if (isMobile) {
+        // Mobile layout
+        html += `
+                <thead>
                     <tr>
+                        <th style="width: 70px;" class="text-center">Status</th>
                         <th>Name</th>
-                        <th>Section</th>
-                        <th>Event</th>
-                        <th>Date</th>
-                        <th>Status</th>
+                        <th style="width: 40px;" class="text-center">▼</th>
                     </tr>
                 </thead>
-                <tbody>`
-    ];
-
-    // Batch process for better performance with large datasets
-    const batchSize = 100;
-    for (let i = 0; i < attendees.length; i += batchSize) {
-        const batch = attendees.slice(i, i + batchSize);
-        batch.forEach(attendee => {
-            const status = attendee.attending || attendee.status || 'Unknown';
-            const statusColor = getStatusColor(status);
-            
-            htmlParts.push(`
-                <tr>
-                    <td>
-                        <strong>${attendee.firstname || ''} ${attendee.lastname || ''}</strong>
-                    </td>
-                    <td>
-                        ${attendee.sectionname || '-'}
-                    </td>
-                    <td>
-                        ${attendee._eventName || '-'}
-                    </td>
-                    <td>
-                        ${attendee._eventDate || '-'}
-                    </td>
-                    <td>
-                        <span class="badge badge-${statusColor}">${status}</span>
-                    </td>
-                </tr>
-            `);
-        });
+                <tbody id="summary-attendance-tbody">`;
+    } else {
+        // Desktop layout
+        html += `
+                <thead>
+                    <tr>
+                        <th style="width: 80px;" class="text-center">Attending</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th style="width: 40px;" class="text-center">▼</th>
+                    </tr>
+                </thead>
+                <tbody id="summary-attendance-tbody">`;
     }
 
-    htmlParts.push(`
+    // Generate person rows
+    Object.entries(attendeesByPerson).forEach(([personKey, person], personIdx) => {
+        if (isMobile) {
+            html += `
+                <tr class="summary-person-row" data-person-idx="${personIdx}" style="cursor: pointer;">
+                    <td class="text-center total-column">
+                        <div class="d-flex flex-column">
+                            <span class="text-success fw-bold">${person.totalYes}</span>
+                            <span class="text-danger small">${person.totalNo}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="fw-bold">${person.firstname} ${person.lastname}</div>
+                        <small class="text-muted">${person.events.length} event(s)</small>
+                    </td>
+                    <td class="text-center">
+                        <span class="summary-expand-icon">▼</span>
+                    </td>
+                </tr>`;
+        } else {
+            html += `
+                <tr class="summary-person-row" data-person-idx="${personIdx}" style="cursor: pointer;">
+                    <td class="text-center">
+                        <span class="text-success fw-bold">${person.totalYes}</span> / 
+                        <span class="text-danger">${person.totalNo}</span>
+                    </td>
+                    <td>${person.firstname}</td>
+                    <td>${person.lastname}</td>
+                    <td class="text-center">
+                        <span class="summary-expand-icon">▼</span>
+                    </td>
+                </tr>`;
+        }
+
+        // Add expandable details row
+        html += `
+            <tr class="summary-person-details-row" id="summary-person-details-${personIdx}" style="display: none;">
+                <td colspan="${isMobile ? 3 : 4}" class="bg-light p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead class="bg-secondary text-white">
+                                <tr>
+                                    <th class="small">Section</th>
+                                    <th class="small">Event</th>
+                                    <th class="small text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+        // Add event details for this person
+        person.events.forEach(event => {
+            const statusClass = event.attending === 'Yes' ? 'text-success' : 'text-danger';
+            html += `
+                <tr>
+                    <td class="small">${event.sectionname || ''}</td>
+                    <td class="small">${event._eventName || ''}</td>
+                    <td class="small text-center ${statusClass}">
+                        <strong>${event.attending || ''}</strong>
+                    </td>
+                </tr>`;
+        });
+
+        html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>`;
+    });
+
+    html += `
                 </tbody>
             </table>
         </div>
-    `);
+    `;
 
-    // Single DOM update for optimal performance
-    summaryContent.innerHTML = htmlParts.join('');
+    summaryContent.innerHTML = html;
+
+    // Add expand functionality
+    addSummaryPersonExpandFunctionality();
+    
+    // Add filtering functionality
+    addSummaryAttendeeFiltering(attendeesByPerson, attendees);
+}
+
+// Add the summary person expand functionality
+function addSummaryPersonExpandFunctionality() {
+    document.querySelectorAll('.summary-person-row').forEach(row => {
+        row.addEventListener('click', function() {
+            const personIdx = this.dataset.personIdx;
+            const detailsRow = document.getElementById(`summary-person-details-${personIdx}`);
+            const expandIcon = this.querySelector('.summary-expand-icon');
+            
+            if (detailsRow.style.display === 'none') {
+                // Expand
+                detailsRow.style.display = '';
+                expandIcon.textContent = '▲';
+                this.classList.add('expanded');
+            } else {
+                // Collapse
+                detailsRow.style.display = 'none';
+                expandIcon.textContent = '▼';
+                this.classList.remove('expanded');
+            }
+        });
+    });
+}
+
+// Add filtering for summary table
+function addSummaryAttendeeFiltering(attendeesByPerson, originalAttendees) {
+    const sectionFilter = document.getElementById('summary-section-filter');
+    const eventFilter = document.getElementById('summary-event-filter');
+    const statusFilter = document.getElementById('summary-status-filter');
+    const nameFilter = document.getElementById('summary-name-filter');
+    const clearButton = document.getElementById('summary-clear-filters-btn');
+
+    function applyFilters() {
+        const sectionValue = sectionFilter.value.toLowerCase();
+        const eventValue = eventFilter.value.toLowerCase();
+        const statusValue = statusFilter.value.toLowerCase();
+        const nameValue = nameFilter.value.toLowerCase();
+
+        let visibleCount = 0;
+
+        document.querySelectorAll('.summary-person-row').forEach(row => {
+            const personIdx = row.dataset.personIdx;
+            const personKey = Object.keys(attendeesByPerson)[personIdx];
+            const person = attendeesByPerson[personKey];
+            
+            // Check if person matches filters
+            const nameMatch = !nameValue || 
+                (person.firstname.toLowerCase().includes(nameValue) || 
+                 person.lastname.toLowerCase().includes(nameValue));
+                 
+            // Check if any of their events match section/event/status filters
+            const eventsMatch = person.events.some(event => {
+                const sectionMatch = !sectionValue || event.sectionname.toLowerCase().includes(sectionValue);
+                const eventMatch = !eventValue || event._eventName.toLowerCase().includes(eventValue);
+                const statusMatch = !statusValue || event.attending.toLowerCase().includes(statusValue);
+                
+                return sectionMatch && eventMatch && statusMatch;
+            });
+
+            if (nameMatch && eventsMatch) {
+                row.style.display = '';
+                document.getElementById(`summary-person-details-${personIdx}`).style.display = 'none';
+                row.classList.remove('expanded');
+                row.querySelector('.summary-expand-icon').textContent = '▼';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+                document.getElementById(`summary-person-details-${personIdx}`).style.display = 'none';
+            }
+        });
+
+        document.getElementById('summary-attendee-count').textContent = visibleCount;
+    }
+
+    // Add event listeners
+    [sectionFilter, eventFilter, statusFilter, nameFilter].forEach(filter => {
+        filter.addEventListener('change', applyFilters);
+        filter.addEventListener('input', applyFilters);
+    });
+
+    clearButton.addEventListener('click', () => {
+        [sectionFilter, eventFilter, statusFilter, nameFilter].forEach(filter => {
+            filter.value = '';
+        });
+        applyFilters();
+    });
 }
 
 // Render grouped attendance table (optimized for performance)
