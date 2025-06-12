@@ -13,7 +13,10 @@
     "cypress:run": "cypress run",
     "cypress:run:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress run",
     "cypress:open:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress open",
-    "dev": "node https-server.js"
+    "dev": "node https-server.js",
+    "build": "chmod +x build-with-sourcemaps.sh && ./build-with-sourcemaps.sh",
+    "build:prod": "npm run build && npx sentry-cli releases finalize vikings-eventmgmt@$(date +%s)",
+    "deploy": "npm run build:prod"
   },
   "repository": {
     "type": "git",
@@ -38,7 +41,9 @@
     "@babel/preset-env": "^7.0.0",
     "@eslint/js": "^9.28.0",
     "@eslint/markdown": "^6.5.0",
+    "@sentry/cli": "^2.46.0",
     "@sentry/esbuild-plugin": "^3.5.0",
+    "@sentry/webpack-plugin": "^3.5.0",
     "@testing-library/jest-dom": "^6.6.3",
     "babel-jest": "^29.0.0",
     "cypress": "^13.17.0",
