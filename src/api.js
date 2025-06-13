@@ -427,3 +427,22 @@ export async function testBackendConnection() {
         return false;
     }
 }
+
+// --- Expose functions globally for CDN build ---
+if (typeof window.API_FUNCTIONS === 'undefined') {
+  window.API_FUNCTIONS = {};
+}
+window.API_FUNCTIONS.getUserRoles = getUserRoles;
+window.API_FUNCTIONS.getMostRecentTermId = getMostRecentTermId;
+window.API_FUNCTIONS.getEvents = getEvents;
+window.API_FUNCTIONS.getEventAttendance = getEventAttendance;
+window.API_FUNCTIONS.getFlexiRecords = getFlexiRecords;
+window.API_FUNCTIONS.getToken = getToken;
+window.API_FUNCTIONS.clearToken = clearToken;
+window.API_FUNCTIONS.isAuthenticated = isAuthenticated;
+window.API_FUNCTIONS.handleTokenExpiration = handleTokenExpiration;
+window.API_FUNCTIONS.getTermsForSection = getTermsForSection;
+window.API_FUNCTIONS.checkRateLimitStatus = checkRateLimitStatus;
+window.API_FUNCTIONS.clearBlockedStatus = clearBlockedStatus;
+window.API_FUNCTIONS.testBackendConnection = testBackendConnection;
+// isTokenValid, checkIfBlocked, logRateLimitInfo, handleAPIResponseWithRateLimit are internal
