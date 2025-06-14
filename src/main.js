@@ -11,7 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.innerHTML = '<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Error: API script did not load. Application cannot start.</p>';
     return;
   }
-  if (typeof window.VUE_COMPONENTS === 'undefined' || !window.VUE_COMPONENTS.SectionsTable || !window.VUE_COMPONENTS.EventsTable || !window.VUE_COMPONENTS.AttendanceDisplay || !window.VUE_COMPONENTS.BlockedScreen) {
+  if (typeof window.VUE_COMPONENTS === 'undefined' ||
+      !window.VUE_COMPONENTS.SectionsTable ||
+      !window.VUE_COMPONENTS.EventsTable ||
+      !window.VUE_COMPONENTS.AttendanceDisplay ||
+      !window.VUE_COMPONENTS.BlockedScreen ||
+      !window.VUE_COMPONENTS.RateLimitIndicator) { // Added RateLimitIndicator check
     console.error('Vue components not loaded. Check component script tags in index.html.');
     document.body.innerHTML = '<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Error: Vue components script did not load. Application cannot start.</p>';
     return;
@@ -19,10 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Vue App Setup ---
   const { ref, computed, onMounted } = Vue;
+      // const API = window.API_FUNCTIONS; // Defined later for clarity
   const SectionsTable = window.VUE_COMPONENTS.SectionsTable;
   const EventsTable = window.VUE_COMPONENTS.EventsTable;
   const AttendanceDisplay = window.VUE_COMPONENTS.AttendanceDisplay;
   const BlockedScreen = window.VUE_COMPONENTS.BlockedScreen;
+  const RateLimitIndicator = window.VUE_COMPONENTS.RateLimitIndicator; // Added RateLimitIndicator
   const API = window.API_FUNCTIONS;
 
   // Auth constants
@@ -39,35 +46,47 @@ document.addEventListener('DOMContentLoaded', () => {
       'sections-table': SectionsTable,
       'events-table': EventsTable,
       'attendance-display': AttendanceDisplay,
-      'blocked-screen': BlockedScreen
+      'blocked-screen': BlockedScreen,
+      'rate-limit-indicator': RateLimitIndicator // Added RateLimitIndicator
     },
     setup() {
       // Core App State
-      const message = ref('Viking Scouts Event Management');
-      const appError = ref(null);
-      const isAppLoading = ref(true); // Global loading for initial auth/block check
+      const message = ref('Viking Scouts Event Management'); // User-facing title
+      /** @type {import('vue').Ref<string | null>} */
+      const appError = ref(null); // For displaying errors to the user
+      const isAppLoading = ref(true); // For initial auth/block check
 
       // Blocked State
+      /** @type {import('vue').Ref<boolean>} */
       const isBlocked = ref(false);
 
       // Auth State
+      /** @type {import('vue').Ref<boolean>} */
       const isAuthenticated = ref(false);
+      /** @type {import('vue').Ref<string>} */
       const osmLoginUrl = ref('');
 
       // Sidebar State
+      /** @type {import('vue').Ref<boolean>} */
       const isSidebarOpen = ref(window.innerWidth >= 768);
 
       // Data State
+      /** @type {import('vue').Ref<import('./types').Section[]>} */
       const sections = ref([]);
       const isLoadingSections = ref(false); // For subsequent section loads/refreshes
+      /** @type {import('vue').Ref<string[]>} */
       const selectedSectionIdsFromChild = ref([]);
+      /** @type {import('vue').Ref<import('./types').Event[]>} */
       const eventsList = ref([]);
       const isLoadingEvents = ref(false);
+      /** @type {import('vue').Ref<import('./types').Event[]>} */
       const selectedEventsFromChild = ref([]);
+      /** @type {import('vue').Ref<import('./types').Attendee[]>} */
       const attendeesList = ref([]);
       const isLoadingAttendance = ref(false);
 
       // Computed section map (used internally)
+      /** @type {import('vue').ComputedRef<Record<string, {sectionname: string}>>} */
       const sectionDetailsMap = computed(() => {
         const map = {};
         sections.value.forEach(section => {
@@ -84,22 +103,22 @@ document.addEventListener('DOMContentLoaded', () => {
           const cacheData = JSON.parse(cached);
           if (Date.now() - cacheData.timestamp > SECTIONS_CACHE_EXPIRY) {
             localStorage.removeItem(SECTIONS_CACHE_KEY);
-            console.log('App: Sections cache expired.');
+            console.info('App: Sections cache expired.');
             return null;
           }
-          console.log('App: Loaded sections from cache.');
+          console.info('App: Loaded sections from cache.');
           return cacheData.sections;
         } catch (e) { console.warn('App: Failed to load sections from cache', e); return null; }
       };
       const saveSectionsToCache = (sectionsToCache) => {
         try {
           localStorage.setItem(SECTIONS_CACHE_KEY, JSON.stringify({ sections: sectionsToCache, timestamp: Date.now() }));
-          console.log('App: Saved sections to cache.');
+          console.info('App: Saved sections to cache.');
         } catch (e) { console.warn('App: Failed to save sections to cache', e); }
       };
       const clearSectionsCache = () => {
         localStorage.removeItem(SECTIONS_CACHE_KEY);
-        console.log('App: Sections cache cleared.');
+        console.info('App: Sections cache cleared.');
       };
 
       // --- Blocked State Logic ---
@@ -133,17 +152,20 @@ document.addEventListener('DOMContentLoaded', () => {
         isAuthenticated.value = false;
         clearAppData();
         prepareLoginUrl();
-        console.log('App: Logged out.');
+        console.info('App: Logged out.');
       };
 
+      /**
+       * @param {import('./types').Section[]} sectionsData
+       */
       const loadSectionsAndMap = (sectionsData) => {
          sections.value = sectionsData;
          // sectionDetailsMap is computed, so it will update automatically
       };
 
       const checkAuthStatus = async () => {
-        if (checkForBlockedStatus()) return; // Re-check, though onMounted handles initial
-        isAppLoading.value = true; // Ensure loading state is true at start
+        if (checkForBlockedStatus()) return;
+        isAppLoading.value = true;
         appError.value = null;
         try {
           const token = API.getToken();
@@ -151,31 +173,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const cachedSections = getSectionsFromCache();
             if (cachedSections) {
               loadSectionsAndMap(cachedSections);
-              console.log('App: Sections loaded from cache during auth check.');
+              // console.info('App: Sections initially loaded from cache during auth check.'); // Less verbose
             }
-            // Always call getUserRoles to validate token and get fresh data
-            const sectionsDataFromApi = await API.getUserRoles(); // This also handles token expiration via api.js
-            // Update if cache was stale or empty
+            const sectionsDataFromApi = await API.getUserRoles();
             if (!cachedSections || JSON.stringify(cachedSections) !== JSON.stringify(sectionsDataFromApi)) {
               loadSectionsAndMap(sectionsDataFromApi);
               saveSectionsToCache(sectionsDataFromApi);
-              console.log('App: Cache updated with fresh sections from API.');
+              console.info('App: Cache updated with fresh sections from API.');
             }
             isAuthenticated.value = true;
-            console.log('App: User is authenticated and sections are loaded/validated.');
+            console.info('App: User is authenticated and sections are loaded/validated.');
           } else {
             isAuthenticated.value = false;
             prepareLoginUrl();
-            console.log('App: No token found. User needs to login.');
+            console.info('App: No token found. User needs to login.');
           }
         } catch (error) {
           console.error('App: Auth/API error during initial load:', error);
-          appError.value = `Authentication or data loading failed: ${error.message}. Try logging out and in.`;
-          // logout(); // logout() can cause reload loop if server error persists on redirect.
-          // Let api.js handleTokenExpiration for reloads on true auth errors.
-          // For other errors, show message, user can manually logout.
-          isAuthenticated.value = false; // Ensure not authenticated on error
-          prepareLoginUrl(); // Prepare for a new login attempt
+          appError.value = `Authentication or data loading failed: ${error.message}. Try logging out or refreshing.`;
+          isAuthenticated.value = false;
+          prepareLoginUrl();
         } finally {
           isAppLoading.value = false;
         }
@@ -186,10 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const handleResize = () => { if (window.innerWidth < 768) isSidebarOpen.value = false; else isSidebarOpen.value = true; };
 
       // --- Data Handling ---
+      /**
+       * @param {string[]} selectedIds
+       */
       const handleSectionSelection = async (selectedIds) => {
         selectedSectionIdsFromChild.value = selectedIds; appError.value = null;
         eventsList.value = []; selectedEventsFromChild.value = []; attendeesList.value = [];
         if (!selectedIds || selectedIds.length === 0) { isLoadingEvents.value = false; return; }
+        // console.info('App: Fetching events for selected sections:', selectedIds);
         isLoadingEvents.value = true; let aggregatedEvents = [];
         try {
           for (const sectionId of selectedIds) {
@@ -200,24 +221,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sectionName = sectionDetailsMap.value[sectionId]?.sectionname || 'Unknown Section';
                 aggregatedEvents.push(...eventsData.items.map(event => ({ ...event, sectionname: sectionName, sectionid: sectionId, termid: termId })));
               }
-            } else { console.warn(`App: No termId for section ${sectionId}.`);}
+            } else { console.warn(`App: No termId found for section ${sectionId}.`);}
           }
-        } catch (e) { appError.value = `Failed to load events: ${e.message || 'Unknown error'}`; }
+        } catch (e) { console.error(`App: Failed to load events: ${e.message || 'Unknown error'}`, e); appError.value = `Failed to load events: ${e.message || 'Unknown error'}`; }
         finally { isLoadingEvents.value = false; }
         eventsList.value = aggregatedEvents;
       };
+      /**
+       * @param {import('./types').Event[]} selectedEvents
+       */
       const handleEventSelection = async (selectedEvents) => {
         selectedEventsFromChild.value = selectedEvents; appError.value = null; attendeesList.value = [];
         if (!selectedEvents || selectedEvents.length === 0) { isLoadingAttendance.value = false; return; }
+        // console.info('App: Fetching attendance for selected events:', selectedEvents.map(e => e.eventid));
         isLoadingAttendance.value = true; let aggregatedAttendees = [];
         try {
           for (const event of selectedEvents) {
-            if (!event || !event.sectionid || !event.eventid || !event.termid) { console.warn('Invalid event for attendance:', event); continue; }
+            if (!event || !event.sectionid || !event.eventid || !event.termid) { console.warn('App: Invalid event object in selection for attendance:', event); continue; }
             const attendanceData = await API.getEventAttendance(event.sectionid, event.eventid, event.termid);
             const items = (attendanceData?.items && Array.isArray(attendanceData.items)) ? attendanceData.items : (Array.isArray(attendanceData) ? attendanceData : []);
             aggregatedAttendees.push(...items.map(att => ({ ...att, _eventName: event.name, _eventDate: event.date, sectionname: event.sectionname })));
           }
-        } catch (e) { appError.value = `Failed to load attendance: ${e.message || 'Unknown error'}`; }
+        } catch (e) { console.error(`App: Failed to load attendance: ${e.message || 'Unknown error'}`, e); appError.value = `Failed to load attendance: ${e.message || 'Unknown error'}`; }
         finally { isLoadingAttendance.value = false; }
         attendeesList.value = aggregatedAttendees;
       };
@@ -322,16 +347,68 @@ document.addEventListener('DOMContentLoaded', () => {
             <p v-if="!osmLoginUrl && !isAppLoading" class="text-danger mt-2 small">Login service is currently unavailable. Please try again later or check configuration.</p>
           </div>
         </template>
+        <rate-limit-indicator v-if="isAuthenticated"></rate-limit-indicator>
       </div>
     `
   };
 
   try {
     const appInstance = Vue.createApp(App);
+
+    // --- Vue Global Error Handler for Sentry ---
+    if (typeof appInstance !== 'undefined' && appInstance.config) {
+      appInstance.config.errorHandler = (err, instance, info) => {
+        console.error("Vue errorHandler caught:", err);
+        console.error("Vue component instance:", instance);
+        console.error("Vue-specific error info:", info);
+
+        if (window.Sentry) {
+          window.Sentry.withScope((scope) => {
+            // Attempt to get component name
+            let componentName = 'UnknownComponent';
+            if (instance) {
+              if (instance.$options && instance.$options.name) {
+                componentName = instance.$options.name;
+              } else if (instance.$ && instance.$.type && instance.$.type.name) {
+                // For Composition API components, name might be in internal type object
+                componentName = instance.$.type.name;
+              } else if (instance.$options && instance.$options._componentTag) {
+                componentName = instance.$options._componentTag;
+              } else if (instance._ && instance._.setupState && instance._.setupState.constructor) {
+                 // Fallback for some Composition API setups if a more direct name isn't found
+                 componentName = instance._.setupState.constructor.name || 'CompositionComponent';
+              }
+            }
+            scope.setExtra("vue_component_name", componentName);
+            scope.setExtra("vue_props", instance ? instance.$props : 'N/A');
+            scope.setExtra("vue_lifecycle_hook_info", info);
+            window.Sentry.captureException(err);
+          });
+        } else {
+          console.warn("Sentry is not available. Error not reported to Sentry.");
+        }
+      };
+
+      // Optional: Vue warnHandler
+      // appInstance.config.warnHandler = (msg, instance, trace) => {
+      //   console.warn("Vue warnHandler caught:", msg, trace);
+      //   if (window.Sentry) {
+      //     window.Sentry.withScope((scope) => {
+      //       let componentName = 'UnknownComponent';
+      //       if (instance) { /* ... similar logic to above for componentName ... */ }
+      //       scope.setExtra("vue_component_name", componentName);
+      //       scope.setExtra("vue_trace", trace);
+      //       window.Sentry.captureMessage(`Vue Warning: ${msg}`, 'warning');
+      //     });
+      //   }
+      // };
+    }
+    // --- End Vue Global Error Handler ---
+
     appInstance.mount('#app');
-    console.log('Vue app created and mounted, with BlockedScreen and Caching logic integrated.');
+    // console.log('Vue app created and mounted, with Sentry error handler, BlockedScreen and Caching logic integrated.'); // Removed for less noise
   } catch (e) {
-    console.error('Error creating or mounting Vue app:', e);
+    console.error('CRITICAL: Error creating or mounting Vue app:', e);
     document.body.innerHTML = `<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Critical Error: Could not initialize the application. Details: ${e.message}</p>`;
   }
 });

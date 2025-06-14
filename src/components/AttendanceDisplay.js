@@ -14,17 +14,20 @@ const AttendanceDisplay = {
     }
   },
   setup(props) {
-    const activeTab = ref('summary'); // 'summary', 'grouped', 'camp-groups'
+    /** @type {import('vue').Ref<'summary' | 'grouped' | 'camp-groups'>} */
+    const activeTab = ref('summary');
 
+    /** @param {'summary' | 'grouped' | 'camp-groups'} tabName */
     const switchTab = (tabName) => {
       activeTab.value = tabName;
     };
 
     // === Summary Tab Logic ===
+    /** @type {import('vue').ComputedRef<Record<string, {firstname: string, lastname: string, events: import('../types').Attendee[], totalYes: number, totalNo: number}>>} */
     const attendeesByPerson = computed(() => {
       if (!props.attendees || props.attendees.length === 0) return {};
       const groups = {};
-      props.attendees.forEach(attendee => {
+      (/** @type {import('../types').Attendee[]} */ (props.attendees)).forEach(attendee => {
         const personKey = `${attendee.firstname} ${attendee.lastname}`;
         if (!groups[personKey]) {
           groups[personKey] = {
@@ -50,16 +53,20 @@ const AttendanceDisplay = {
         const lastNameCompare = personA.lastname.localeCompare(personB.lastname);
         return lastNameCompare !== 0 ? lastNameCompare : personA.firstname.localeCompare(personB.firstname);
     }));
+    /** @type {import('vue').Ref<Record<string, boolean>>} */
     const expandedSummaryRows = ref({});
+    /** @param {string} personKey */
     const toggleSummaryRow = (personKey) => {
       expandedSummaryRows.value[personKey] = !expandedSummaryRows.value[personKey];
     };
 
     // === Grouped Tab Logic ===
+    /** @type {import('vue').ComputedRef<Record<string, import('../types').Attendee[]>>} */
     const attendeesByStatus = computed(() => {
       if (!props.attendees || props.attendees.length === 0) return {};
+      /** @type {Record<string, import('../types').Attendee[]>} */
       const groups = {};
-      props.attendees.forEach(attendee => {
+      (/** @type {import('../types').Attendee[]} */ (props.attendees)).forEach(attendee => {
         const status = attendee.attending || attendee.status || 'Unknown';
         if (!groups[status]) groups[status] = [];
         groups[status].push(attendee);
@@ -78,15 +85,19 @@ const AttendanceDisplay = {
          const priorityB = statusPriority[b] || 999;
          return priorityA !== priorityB ? priorityA - priorityB : a.localeCompare(b);
       });
+      /** @type {Record<string, import('../types').Attendee[]>} */
       const sortedGroups = {};
       sortedKeys.forEach(key => sortedGroups[key] = groups[key]);
       return sortedGroups;
     });
     const groupedStatusKeys = computed(() => Object.keys(attendeesByStatus.value));
+    /** @type {import('vue').Ref<Record<string, boolean>>} */
     const expandedGroupedSections = ref({});
+    /** @param {string} statusKey */
     const toggleGroupedSection = (statusKey) => {
         expandedGroupedSections.value[statusKey] = !expandedGroupedSections.value[statusKey];
     };
+    /** @param {string | undefined} status */
     const getStatusColorClass = (status) => {
          switch (status?.toLowerCase()) {
              case 'yes': case 'attended': case 'present': return 'badge-success';
@@ -97,10 +108,12 @@ const AttendanceDisplay = {
     };
 
     // === Camp Groups Logic ===
+    /** @type {import('vue').ComputedRef<{firstname: string, lastname: string, sectionname?: string}[]>} */
     const uniqueCampAttendees = computed(() => {
       if (!props.attendees || props.attendees.length === 0) return [];
+      /** @type {Record<string, {firstname: string, lastname: string, sectionname?: string}>} */
       const unique = {};
-      props.attendees.forEach(attendee => {
+      (/** @type {import('../types').Attendee[]} */ (props.attendees)).forEach(attendee => {
         const nameKey = `${attendee.firstname} ${attendee.lastname}`;
         if (!unique[nameKey]) {
           unique[nameKey] = {

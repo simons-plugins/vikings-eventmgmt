@@ -19,6 +19,7 @@ const EventsTable = {
   },
   emits: ['event-selection-change'],
   setup(props, { emit }) {
+    /** @type {import('vue').Ref<import('../types').Event[]>} */
     const selectedEventsInternal = ref([]); // Store the full event objects that are selected
 
     const isMobile = computed(() => {
@@ -34,16 +35,23 @@ const EventsTable = {
       } else {
         selectedEventsInternal.value = selectedEventsInternal.value.filter(e => !(e.eventid === eventObj.eventid && e.sectionid === eventObj.sectionid));
       }
+      /**
+       * Emitted when event selection changes.
+       * @event event-selection-change
+       * @type {import('../types').Event[]}
+       */
       emit('event-selection-change', [...selectedEventsInternal.value]);
     };
 
+    /** @type {import('vue').Ref<Record<number, boolean>>} */
     const expandedMobileRows = ref({}); // For mobile view: { [idx]: boolean }
+    /** @param {number} idx */
     const toggleMobileRow = (idx) => {
         expandedMobileRows.value[idx] = !expandedMobileRows.value[idx];
     };
 
     // Clear selections if the events list itself changes dramatically (e.g., new sections selected)
-    watch(() => props.events, () => {
+    watch(() => /** @type {import('../types').Event[]} */ (props.events), () => {
       selectedEventsInternal.value = [];
       expandedMobileRows.value = {}; // Reset expanded rows as well
       // Do not emit here as it might cause circular updates if parent is also watching selectedEvents

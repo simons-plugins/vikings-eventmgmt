@@ -7,6 +7,10 @@ const BlockedScreen = {
   setup(props, { emit }) {
     const handleClearBlock = () => {
       if (confirm('Admin: Clear blocked status? Only do this if the administrator has resolved the underlying issue with OSM.')) {
+         /**
+          * Emitted when the admin attempts to clear the blocked status.
+          * @event clear-block
+          */
         emit('clear-block');
       }
     };

@@ -1,7 +1,7 @@
 // Always use production backend - simplifies configuration and avoids local setup issues
 const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
 
-console.log('Using Backend URL:', BACKEND_URL);
+console.info('Using Backend URL:', BACKEND_URL); // Changed to info
 
 // Check if OSM API access has been blocked
 function checkIfBlocked() {
@@ -11,9 +11,9 @@ function checkIfBlocked() {
 }
 
 // Clear blocked status (for admin use)
-export function clearBlockedStatus() {
+function clearBlockedStatus() {
     sessionStorage.removeItem('osm_blocked');
-    console.log('OSM blocked status cleared');
+    console.info('OSM blocked status cleared'); // Changed to info
 }
 
 // Enhanced rate limit monitoring for backend-provided rate limit info
@@ -26,8 +26,8 @@ function logRateLimitInfo(responseData, apiName) {
             const osm = info.osm;
             const percentUsed = osm.limit > 0 ? ((osm.limit - osm.remaining) / osm.limit * 100).toFixed(1) : 0;
             
-            console.group(`🔄 ${apiName} Rate Limit Status`);
-            console.log(`📊 OSM API:`, {
+            console.groupCollapsed(`🔄 ${apiName} Rate Limit Status`); // Changed to groupCollapsed
+            console.debug(`📊 OSM API:`, { // Changed to debug
                 remaining: `${osm.remaining}/${osm.limit}`,
                 percentUsed: `${percentUsed}%`,
                 window: osm.window || 'per hour',
@@ -50,7 +50,7 @@ function logRateLimitInfo(responseData, apiName) {
             const backend = info.backend;
             const backendPercentUsed = backend.limit > 0 ? (((backend.limit - backend.remaining) / backend.limit) * 100).toFixed(1) : 0;
             
-            console.log(`🖥️ Backend API:`, {
+            console.debug(`🖥️ Backend API:`, { // Changed to debug
                 remaining: `${backend.remaining}/${backend.limit}`,
                 percentUsed: `${backendPercentUsed}%`,
                 window: backend.window || 'per minute'
@@ -59,7 +59,7 @@ function logRateLimitInfo(responseData, apiName) {
         
         console.groupEnd();
     } else {
-        console.log(`📊 ${apiName}: No rate limit info available`);
+        console.debug(`📊 ${apiName}: No rate limit info available`); // Changed to debug
     }
 }
 
@@ -133,7 +133,7 @@ async function handleAPIResponseWithRateLimit(response, apiName) {
 }
 
 // Optional rate limit status checker
-export async function checkRateLimitStatus() {
+async function checkRateLimitStatus() {
     try {
         const response = await fetch(`${BACKEND_URL}/rate-limit-status`, {
             method: 'GET',
@@ -154,12 +154,12 @@ export async function checkRateLimitStatus() {
     return null;
 }
 
-export function getToken() {
+function getToken() {
     return sessionStorage.getItem('access_token'); // <-- changed
 }
 
 // Add token validation function:
-export function isTokenValid(responseData) {
+function isTokenValid(responseData) {
     // Check if the response indicates token expiration or authentication errors
     if (responseData && (
         (responseData.status === false && responseData.error && responseData.error.code === 'access-error-2') ||
@@ -172,8 +172,8 @@ export function isTokenValid(responseData) {
     return true;
 }
 
-export function handleTokenExpiration() {
-    console.log('Token expired - redirecting to login');
+function handleTokenExpiration() {
+    console.info('Token expired - redirecting to login'); // Changed to info
     // Clear expired token
     sessionStorage.removeItem('access_token');
     
@@ -185,7 +185,7 @@ export function handleTokenExpiration() {
                              (typeof window !== 'undefined' && window.navigator && window.navigator.userAgent === 'jsdom');
     
     if (isTestEnvironment) {
-        console.log('Test environment detected - skipping alert and page reload');
+        console.info('Test environment detected - skipping alert and page reload'); // Changed to info
         return;
     }
     
@@ -201,17 +201,17 @@ export function handleTokenExpiration() {
 }
 
 // Clear authentication token (logout)
-export function clearToken() {
+function clearToken() {
     sessionStorage.removeItem('access_token');
-    console.log('Authentication token cleared');
+    console.info('Authentication token cleared'); // Changed to info
 }
 
 // Check if user is authenticated
-export function isAuthenticated() {
+function isAuthenticated() {
     return !!getToken();
 }
 
-export async function getTermsForSection(sectionId) {
+async function getTermsForSection(sectionId) {
     const token = getToken();
     if (!token) return [];
     const response = await fetch(`${BACKEND_URL}/get-terms`, {
@@ -223,7 +223,7 @@ export async function getTermsForSection(sectionId) {
     return data ? (data[sectionId] || []) : [];
 }
 
-export async function getMostRecentTermId(sectionId) {
+async function getMostRecentTermId(sectionId) {
     try {
         const token = getToken();
         if (!token) {
@@ -243,7 +243,7 @@ export async function getMostRecentTermId(sectionId) {
         const data = await handleAPIResponseWithRateLimit(response, 'getMostRecentTermId');
         if (!data) return null;
         
-        console.log('Terms API response for section', sectionId, ':', data);
+        console.debug('Terms API response for section', sectionId, ':', data); // Changed to debug
         
         // Handle different response formats
         let termsArray = null;
@@ -275,7 +275,7 @@ export async function getMostRecentTermId(sectionId) {
         });
 
         const mostRecentTerm = sortedTerms[0];
-        console.log('Most recent term found for section', sectionId, ':', mostRecentTerm);
+        console.debug('Most recent term found for section', sectionId, ':', mostRecentTerm); // Changed to debug
         return mostRecentTerm.termid;
 
     } catch (error) {
@@ -284,7 +284,7 @@ export async function getMostRecentTermId(sectionId) {
     }
 }
 
-export async function getUserRoles() {
+async function getUserRoles() {
     try {
         const token = getToken();
         if (!token) {
@@ -316,7 +316,7 @@ export async function getUserRoles() {
     }
 }
 
-export async function getEvents(sectionid, termid) {
+async function getEvents(sectionid, termid) {
     try {
         const token = getToken();
         if (!token) {
@@ -339,7 +339,7 @@ export async function getEvents(sectionid, termid) {
     }
 }
 
-export async function getEventAttendance(sectionId, eventId, termId) {
+async function getEventAttendance(sectionId, eventId, termId) {
     try {
         const token = getToken();
         if (!token) {
@@ -347,7 +347,7 @@ export async function getEventAttendance(sectionId, eventId, termId) {
             return { items: [] };
         }
 
-        console.log('API call with params:', { sectionId, eventId, termId });
+        console.debug('API call with params:', { sectionId, eventId, termId }); // Changed to debug
 
         const response = await fetch(`${BACKEND_URL}/get-event-attendance`, {
             method: 'POST',
@@ -360,10 +360,10 @@ export async function getEventAttendance(sectionId, eventId, termId) {
             })
         });
 
-        console.log('API response status:', response.status);
+        console.debug('API response status:', response.status); // Changed to debug
 
         const data = await handleAPIResponseWithRateLimit(response, 'getEventAttendance');
-        console.log('API response data:', data);
+        console.debug('API response data:', data); // Changed to debug
         
         return data || { items: [] };
 
@@ -373,7 +373,7 @@ export async function getEventAttendance(sectionId, eventId, termId) {
     }
 }
 
-export async function getFlexiRecords(sectionId, archived = 'n') {
+async function getFlexiRecords(sectionId, archived = 'n') {
     try {
         // Check if API access has been blocked
         checkIfBlocked();
@@ -404,22 +404,22 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
 }
 
 // Test backend connectivity
-export async function testBackendConnection() {
+async function testBackendConnection() {
     try {
-        console.log('Testing backend connection to:', BACKEND_URL);
+        console.info('Testing backend connection to:', BACKEND_URL); // Changed to info
         const response = await fetch(`${BACKEND_URL}/health`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
         
-        console.log('Backend connection test - Status:', response.status);
+        console.debug('Backend connection test - Status:', response.status); // Changed to debug
         
         if (response.ok) {
             const data = await response.text();
-            console.log('Backend connection test - Response:', data);
+            console.debug('Backend connection test - Response:', data); // Changed to debug
             return true;
         } else {
-            console.error('Backend connection test failed:', response.status);
+            console.error('Backend connection test failed:', response.status); // Keep as error
             return false;
         }
     } catch (error) {

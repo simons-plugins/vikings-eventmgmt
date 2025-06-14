@@ -12,27 +12,39 @@ const SectionsTable = {
   },
   emits: ['selection-change'],
   setup(props, { emit }) {
+    /** @type {import('vue').Ref<string[]>} */
     const selectedSectionIds = ref([]);
 
     // Function to handle checkbox change
+    /**
+     * @param {string} sectionId
+     * @param {Event} event
+     */
     const handleCheckboxChange = (sectionId, event) => {
-      if (event.target.checked) {
+      const target = /** @type {HTMLInputElement} */ (event.target);
+      if (target.checked) {
         if (!selectedSectionIds.value.includes(sectionId)) {
           selectedSectionIds.value.push(sectionId);
         }
       } else {
         selectedSectionIds.value = selectedSectionIds.value.filter(id => id !== sectionId);
       }
+      /**
+       * Emitted when section selection changes.
+       * @event selection-change
+       * @type {string[]}
+       */
       emit('selection-change', [...selectedSectionIds.value]); // Emit a copy
     };
 
     // Watch for external changes to sections prop to reset selection if needed
-    watch(() => props.sections, (newSections, oldSections) => {
+    /** @type {Array<import('../types').Section>} */
+    watch(() => /** @type {import('../types').Section[]} */ (props.sections), (newSections, oldSections) => {
       // A simple approach: if the list of sections fundamentally changes, clear selections.
       // This avoids trying to keep selections for sections that no longer exist.
       // More sophisticated logic could be used to preserve selections for common sections.
       if (JSON.stringify(newSections) !== JSON.stringify(oldSections)) {
-          console.log('SectionsTable: Sections prop changed, resetting selection.');
+          console.info('SectionsTable: Sections prop changed, resetting selection.');
           selectedSectionIds.value = [];
           emit('selection-change', []);
       }
