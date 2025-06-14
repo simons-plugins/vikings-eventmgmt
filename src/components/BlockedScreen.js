@@ -48,3 +48,4 @@ const BlockedScreen = {
 };
 if (typeof window.VUE_COMPONENTS === 'undefined') { window.VUE_COMPONENTS = {}; }
 window.VUE_COMPONENTS.BlockedScreen = BlockedScreen;
+console.log('BlockedScreen.js executed and registered');

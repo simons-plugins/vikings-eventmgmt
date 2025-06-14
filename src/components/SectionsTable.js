@@ -1,6 +1,5 @@
 // src/components/SectionsTable.js
 // Ensure Vue is available globally if not using modules/build
-const { ref, watch } = typeof Vue !== 'undefined' ? Vue : { ref: () => ({ value: [] }), watch: () => {} }; // Ensure ref returns an object with a value property
 
 const SectionsTable = {
   props: {
@@ -12,6 +11,7 @@ const SectionsTable = {
   },
   emits: ['selection-change'],
   setup(props, { emit }) {
+    const { ref, watch } = Vue; // Moved destructuring here
     /** @type {import('vue').Ref<string[]>} */
     const selectedSectionIds = ref([]);
 
@@ -98,3 +98,4 @@ if (typeof window.VUE_COMPONENTS === 'undefined') {
   window.VUE_COMPONENTS = {};
 }
 window.VUE_COMPONENTS.SectionsTable = SectionsTable;
+console.log('SectionsTable.js executed and registered');

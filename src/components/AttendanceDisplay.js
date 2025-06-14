@@ -1,5 +1,4 @@
 // src/components/AttendanceDisplay.js
-const { ref, computed, watch } = typeof Vue !== 'undefined' ? Vue : { ref: (val) => ({ value: val }), computed: (fn) => ({ value: fn() }), watch: () => {} };
 
 const AttendanceDisplay = {
   props: {
@@ -14,6 +13,7 @@ const AttendanceDisplay = {
     }
   },
   setup(props) {
+    const { ref, computed, watch } = Vue; // Moved destructuring here
     /** @type {import('vue').Ref<'summary' | 'grouped' | 'camp-groups'>} */
     const activeTab = ref('summary');
 
@@ -284,3 +284,4 @@ const AttendanceDisplay = {
 };
 if (typeof window.VUE_COMPONENTS === 'undefined') { window.VUE_COMPONENTS = {}; }
 window.VUE_COMPONENTS.AttendanceDisplay = AttendanceDisplay;
+console.log('AttendanceDisplay.js executed and registered');

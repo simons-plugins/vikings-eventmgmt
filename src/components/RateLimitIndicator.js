@@ -1,8 +1,8 @@
 // src/components/RateLimitIndicator.js
-const { ref, onMounted, onUnmounted, computed } = typeof Vue !== 'undefined' ? Vue : { ref: (val) => ({ value: val }), onMounted: (fn) => fn(), onUnmounted: (fn) => fn(), computed: (fn) => ({ value: fn() }) };
 
 const RateLimitIndicator = {
   setup() {
+    const { ref, onMounted, onUnmounted, computed } = Vue; // Moved destructuring here
     /** @type {import('vue').Ref<import('../types').RateLimitStatus | null>} */
     const rateLimitInfo = ref(null);
     /** @type {import('vue').Ref<string | null>} */
@@ -107,3 +107,4 @@ const RateLimitIndicator = {
 };
 if (typeof window.VUE_COMPONENTS === 'undefined') { window.VUE_COMPONENTS = {}; }
 window.VUE_COMPONENTS.RateLimitIndicator = RateLimitIndicator;
+console.log('RateLimitIndicator.js executed and registered');

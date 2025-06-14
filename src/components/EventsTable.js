@@ -1,5 +1,4 @@
 // src/components/EventsTable.js
-const { ref, watch, computed } = typeof Vue !== 'undefined' ? Vue : { ref: () => ({ value: undefined }), watch: () => {}, computed: (fn) => ({ value: fn() }) }; // Adjusted for computed
 
 const EventsTable = {
   props: {
@@ -19,6 +18,7 @@ const EventsTable = {
   },
   emits: ['event-selection-change'],
   setup(props, { emit }) {
+    const { ref, watch, computed } = Vue; // Moved destructuring here
     /** @type {import('vue').Ref<import('../types').Event[]>} */
     const selectedEventsInternal = ref([]); // Store the full event objects that are selected
 
@@ -180,3 +180,4 @@ const EventsTable = {
 };
 if (typeof window.VUE_COMPONENTS === 'undefined') { window.VUE_COMPONENTS = {}; }
 window.VUE_COMPONENTS.EventsTable = EventsTable;
+console.log('EventsTable.js executed and registered');

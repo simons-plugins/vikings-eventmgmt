@@ -11,16 +11,36 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.innerHTML = '<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Error: API script did not load. Application cannot start.</p>';
     return;
   }
-  if (typeof window.VUE_COMPONENTS === 'undefined' ||
-      !window.VUE_COMPONENTS.SectionsTable ||
-      !window.VUE_COMPONENTS.EventsTable ||
-      !window.VUE_COMPONENTS.AttendanceDisplay ||
-      !window.VUE_COMPONENTS.BlockedScreen ||
-      !window.VUE_COMPONENTS.RateLimitIndicator) { // Added RateLimitIndicator check
-    console.error('Vue components not loaded. Check component script tags in index.html.');
-    document.body.innerHTML = '<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Error: Vue components script did not load. Application cannot start.</p>';
+  if (typeof window.VUE_COMPONENTS === 'undefined') {
+    console.error('CRITICAL: window.VUE_COMPONENTS is undefined. No component scripts likely ran successfully.');
+    document.body.innerHTML = '<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Error: Core component structure missing. Application cannot start.</p>';
     return;
   }
+
+  const componentChecks = {
+    SectionsTable: !!window.VUE_COMPONENTS.SectionsTable,
+    EventsTable: !!window.VUE_COMPONENTS.EventsTable,
+    AttendanceDisplay: !!window.VUE_COMPONENTS.AttendanceDisplay,
+    BlockedScreen: !!window.VUE_COMPONENTS.BlockedScreen,
+    RateLimitIndicator: !!window.VUE_COMPONENTS.RateLimitIndicator
+  };
+
+  let allComponentsLoaded = true;
+  for (const componentName in componentChecks) {
+    if (!componentChecks[componentName]) {
+      console.error(`CRITICAL: Vue component ${componentName} is not loaded.`);
+      allComponentsLoaded = false;
+    } else {
+      console.info(`Component ${componentName} loaded successfully.`);
+    }
+  }
+
+  if (!allComponentsLoaded) {
+    console.error('One or more Vue components failed to load. Check component script tags and individual component files. Application cannot start.');
+    document.body.innerHTML = '<p style="color: red; text-align: center; font-size: 1.2em; padding: 20px;">Error: One or more Vue components failed to load. Application cannot start.</p>';
+    return;
+  }
+  console.info('All essential Vue components appear to be loaded.');
 
   // --- Vue App Setup ---
   const { ref, computed, onMounted } = Vue;
