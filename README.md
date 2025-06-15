@@ -103,9 +103,69 @@ vikings-eventmgmt/
 - ✅ **Error Handling:** Enhanced detection & recovery
 
 ## **🚀 Deployment**
-- **Frontend:** `https://vikings-eventmgmt.onrender.com`
-- **Backend:** `https://vikings-osm-event-manager.onrender.com`
-- **Local Dev:** HTTPS on `localhost:3000`
+
+### Multi-Environment Setup
+
+#### Production Deployment (Render.com)
+- **Service Name**: `vikings-eventmgmt`
+- **Branch**: `main`
+- **URL**: `https://vikings-eventmgmt.onrender.com`
+
+#### Development Deployment (Render.com)
+- **Service Name**: `vikings-eventmgmt-dev` 
+- **Branch**: `develop` (or your development branch)
+- **URL**: `https://vikings-eventmgmt-dev.onrender.com`
+
+### OAuth Configuration
+
+The application uses dynamic callback URLs that automatically adapt to the deployment environment.
+
+**Required OSM OAuth App Settings:**
+Add these callback URLs in your OSM Developer Settings:
+```
+https://vikings-eventmgmt.onrender.com/callback.html        (production)
+https://vikings-eventmgmt-dev.onrender.com/callback.html    (development)  
+http://localhost:3000/callback.html                         (local development)
+```
+
+**How it works:**
+- The app automatically detects the current domain using `window.location.origin`
+- No environment variables needed for callback URL configuration
+- Same backend can be used for both production and development environments
+
+### Deployment Workflow
+
+```bash
+# Development workflow
+git checkout develop
+git commit -m "Add new feature"
+git push origin develop
+# → Auto-deploys to vikings-eventmgmt-dev.onrender.com
+
+# Production workflow  
+git checkout main
+git merge develop
+git push origin main
+# → Auto-deploys to vikings-eventmgmt.onrender.com
+```
+
+### Local Development
+
+```bash
+# Clone repository
+git clone [repository-url]
+cd vikings-eventmgmt
+
+# Install dependencies
+npm install
+
+# Create environment file for HTTPS (optional)
+echo "USE_HTTPS=true" > .env
+
+# Start local server
+node https-server.js
+# → Runs at https://localhost:3000 (or http://localhost:3000)
+```
 
 ## **🔧 Technologies Used**
 - **Frontend:** JavaScript ES6, Bootstrap 4, Font Awesome
