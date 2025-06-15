@@ -44,26 +44,21 @@
         dsn: 'https://d68b0633ca93454b1c4eada1483a0801@o4509454106165248.ingest.us.sentry.io/4509454116716544',
         environment: window.location.hostname === 'localhost' ? 'development' : 'production',
         tracesSampleRate: window.location.hostname === 'localhost' ? 1.0 : 0.1,
-        release: 'vikings-eventmgmt@1.0.0',
+        release: typeof __SENTRY_RELEASE__ !== 'undefined' ? __SENTRY_RELEASE__ : 'vikings-eventmgmt@1.0.0',
         
-        // Enable source map integration (will use inline maps)
+        // Enhanced source map support for ES modules
         integrations: [
           new Sentry.BrowserTracing(),
         ],
         
+        // Enable source maps in production
         beforeSend(event) {
-          // Filter out source map loading errors (shouldn't happen with inline maps)
-          if (event.exception) {
-            const error = event.exception.values[0];
-            if (error && error.value && 
-                (error.value.includes('source map') || 
-                 error.value.includes('.map') ||
-                 error.value.includes('parameterize.js'))) {
-              return null;
-            }
-          }
+          // Don't filter source map errors - we want them for debugging
           return event;
-        }
+        },
+        
+        // Enhanced debugging for ES modules
+        debug: window.location.hostname === 'localhost'
       });
     </script>
     <script>
