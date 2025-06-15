@@ -11,10 +11,6 @@ import { renderTabbedAttendanceView } from '../ui/attendance.js'; // Moved
 
 // --- Event Handlers ---
 
-import { showBlockedScreen } from '../ui.js'; // General UI function
-
-// --- Event Handlers ---
-
 // Dependencies for handleSectionSelect:
 // - showError (already imported from ui.js)
 // - showBlockedScreen (imported above from ui.js)
