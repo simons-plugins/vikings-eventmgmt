@@ -122,7 +122,9 @@ function renderSummaryAttendanceTable(attendees) {
     });
     html += `</tbody></table></div>`;
     summaryContent.innerHTML = html;
-    if (!document.getElementById('sortable-style')) { const style = document.createElement('style'); style.id = 'sortable-style'; style.textContent = `.sortable{cursor:pointer;user-select:none;position:relative;}.sortable:hover{background-color:#f8f9fa;}.sort-arrow{font-size:0.8em;margin-left:4px;color:#6c757d;}.sortable.sort-asc .sort-arrow{color:#007bff;}.sortable.sort-desc .sort-arrow{color:#007bff;}.sortable.sort-asc .sort-arrow::after{content:' ▲';}.sortable.sort-desc .sort-arrow::after{content:' ▼';}`; document.head.appendChild(style); }
+    // CSS for sortable columns should be in a general CSS file, not added by JS here.
+    // For now, assuming it's handled or will be moved to CSS.
+    // if (!document.getElementById('sortable-style')) { ... }
     addSummaryPersonExpandFunctionality();
     addSummaryTableSorting(attendeesByPerson);
     addSummaryAttendeeFiltering(attendeesByPerson, attendees);

@@ -8,7 +8,7 @@ import { renderTabbedAttendanceView } from '../ui/attendance.js'; // Moved
 
 // --- Event Handlers ---
 
-import { showBlockedScreen } from '../ui.js'; // Assuming showBlockedScreen is exported from ui.js
+import { showBlockedScreen } from '../ui.js'; // General UI function
 
 // --- Event Handlers ---
 
