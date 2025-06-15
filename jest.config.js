@@ -50,7 +50,7 @@ export default {
   // testEnvironmentOptions: Options that will be passed to the testEnvironment.
   // For 'jsdom', this can include options like the base URL for the simulated environment.
   testEnvironmentOptions: {
-    url: 'http://localhost:3000' // Sets a base URL for tests, useful for relative paths or history API.
+    url: 'https://localhost:3000' // Sets a base URL for tests, useful for relative paths or history API.
   }
   // moduleNameMapper: A map from regular expressions to module names or to arrays of module names
   // that allow to stub out resources, like images or styles with a CommonJS module.
