@@ -22,12 +22,22 @@ console.log('USE_HTTPS:', USE_HTTPS);
 console.log('process.env.USE_HTTPS:', process.env.USE_HTTPS);
 
 if (USE_HTTPS) {
-  https.createServer({
-    key: fs.readFileSync('./localhost-key.pem'),
-    cert: fs.readFileSync('./localhost.pem')
-  }, app).listen(PORT, () => {
-    console.log(`HTTPS server running at https://localhost:${PORT}`);
-  });
+  try {
+    const httpsOptions = {
+      key: fs.readFileSync('./localhost-key.pem'),
+      cert: fs.readFileSync('./localhost.pem')
+    };
+    
+    https.createServer(httpsOptions, app).listen(PORT, () => {
+      console.log(`HTTPS server running at https://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('❌ HTTPS setup failed:', error.message);
+    console.log('Certificate files expected:');
+    console.log('- ./localhost-key.pem');
+    console.log('- ./localhost.pem');
+    process.exit(1);
+  }
 } else {
   app.listen(PORT, () => {
     console.log(`HTTP server running at http://localhost:${PORT}`);
