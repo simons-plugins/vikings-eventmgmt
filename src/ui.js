@@ -10,8 +10,8 @@ let currentSpinnerType = SPINNER_TYPES.DOTS;
 
 // --- Imports for UI functions ---
 // Corrected paths for when ui.js is in src/ui.js
-import { loadSectionsFromCacheOrAPI } from '../lib/cache.js';
-import { addLogoutButton } from '../lib/auth.js';
+import { loadSectionsFromCacheOrAPI } from './lib/cache.js';
+import { addLogoutButton } from './lib/auth.js';
 
 // Function to change default spinner type
 export function setDefaultSpinner(type) {
@@ -132,7 +132,11 @@ export function renderSectionsTable(sections, onSelectionChange) {
     let container = document.getElementById('sections-table-container');
     if (!container) { /* ... error handling or dynamic creation ... */ return; }
     let html = `<div class="mb-3"><div class="d-flex justify-content-end mb-2"><button class="btn btn-outline-secondary btn-sm" onclick="clearSectionsCache(); loadSectionsFromCacheOrAPI();" title="Refresh sections from API"><i class="fas fa-sync"></i></button></div><table id="sections-table" class="table table-striped table-sm"><thead><tr><th style="width: 40px;"></th><th>Section Name</th></tr></thead><tbody>`;
-    sections.forEach(section => { html += `<tr><td><input type="checkbox" class="section-checkbox" value="${section.sectionid}"></td><td>${section.sectionname}</td></tr>`; });
+    sections.forEach(section => { 
+        const sectionId = section.sectionid || section.id || 'unknown';
+        const sectionName = section.sectionname || section.name || 'Unknown Section';
+        html += `<tr><td><input type="checkbox" class="section-checkbox" value="${sectionId}"></td><td>${sectionName}</td></tr>`; 
+    });
     html += `</tbody></table></div>`;
     container.innerHTML = html;
     const checkboxes = container.querySelectorAll('.section-checkbox');
@@ -156,17 +160,57 @@ export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = f
     let html;
     if (isMobile) {
         html = `<div class="table-responsive"><table id="events-table" class="table table-striped table-sm"><thead><tr><th style="width: 40px;"></th><th style="width: 70px;" class="text-center">Total</th><th>Event Details</th><th style="width: 40px;"><i class="fas fa-expand-alt" title="Tap rows to expand"></i></th></tr></thead><tbody>`;
-        events.forEach((event, idx) => { /* ... mobile row HTML ... */ });
+        events.forEach((event, idx) => {
+            const totalYes = event.yes || 0;
+            const totalNo = event.no || 0;
+            html += `<tr>
+                <td><input type="checkbox" class="event-checkbox" data-idx="${idx}"></td>
+                <td class="text-center">
+                    <div class="d-flex flex-column">
+                        <span class="text-success fw-bold">${totalYes}</span>
+                        <span class="text-danger small">${totalNo}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="fw-bold">${event.name || ''}</div>
+                    <small class="text-muted">${event.sectionname || ''}</small>
+                    <br><small class="text-muted">${event.date || ''}</small>
+                </td>
+                <td class="text-center">
+                    <span class="expand-icon">▼</span>
+                </td>
+            </tr>`;
+        });
     } else {
         html = `<div class="table-responsive"><table id="events-table" class="table table-striped table-sm"><thead><tr><th style="width: 40px;"></th><th style="min-width: 120px;" data-sort="sectionname">Section</th><th style="min-width: 150px;" data-sort="name">Event Name</th><th style="min-width: 100px;" data-sort="date">Date</th><th style="min-width: 60px;" data-sort="yes">Yes</th><th style="min-width: 80px;" data-sort="yes_members">Members</th><th style="min-width: 60px;" data-sort="yes_yls">YLs</th><th style="min-width: 80px;" data-sort="yes_leaders">Leaders</th><th style="min-width: 60px;" data-sort="no">No</th></tr></thead><tbody>`;
-        events.forEach((event, idx) => { html += `<tr><td><input type="checkbox" class="event-checkbox" data-idx="${idx}"></td><td class="text-nowrap">${event.sectionname||''}</td><td class="event-name-cell">${event.name||''}</td><td class="text-nowrap">${event.date||''}</td><td class="text-center">${event.yes||0}</td><td class="text-center">${event.yes_members||0}</td><td class="text-center">${event.yes_yls||0}</td><td class="text-center">${event.yes_leaders||0}</td><td class="text-center">${event.no||0}</td></tr>`; });
+        events.forEach((event, idx) => { 
+            html += `<tr>
+                <td><input type="checkbox" class="event-checkbox" data-idx="${idx}"></td>
+                <td class="text-nowrap">${event.sectionname||''}</td>
+                <td class="event-name-cell">${event.name||''}</td>
+                <td class="text-nowrap">${event.date||''}</td>
+                <td class="text-center">${event.yes||0}</td>
+                <td class="text-center">${event.yes_members||0}</td>
+                <td class="text-center">${event.yes_yls||0}</td>
+                <td class="text-center">${event.yes_leaders||0}</td>
+                <td class="text-center">${event.no||0}</td>
+            </tr>`;
+        });
     }
-    html += `</tbody></table></div>`; // Simplified event row HTML for brevity
+    html += `</tbody></table></div>`;
     container.innerHTML = html;
-    if (isMobile) addMobileExpandFunctionality(); // Assuming addMobileExpandFunctionality is defined
+    if (isMobile) addMobileExpandFunctionality();
     container.eventsData = events;
     const checkboxes = container.querySelectorAll('.event-checkbox');
-    checkboxes.forEach(checkbox => { /* ... event listener ... */ });
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selectedEvents = Array.from(container.querySelectorAll('.event-checkbox:checked'))
+                .map(cb => events[parseInt(cb.dataset.idx)]);
+            if (selectedEvents.length > 0) {
+                onLoadAttendees(selectedEvents);
+            }
+        });
+    });
     // addSortableHeaders('events-table', events, sortedEvents => renderEventsTable(sortedEvents, onLoadAttendees, forceMobileLayout)); // Assuming addSortableHeaders is defined
 }
 
@@ -200,16 +244,47 @@ function initializeSidebar() { // Internal helper for showMainUI
     const toggleBtn = document.getElementById('sidebarToggle');
     const overlay = document.getElementById('sidebarOverlay');
     if (!sidebar || !toggleBtn) { console.warn('Sidebar elements not found'); return; }
+    
     function closeSidebar() {
         sidebar.classList.remove('open');
         document.body.classList.remove('sidebar-open');
         if (overlay) overlay.classList.remove('show');
         toggleBtn.style.left = '1rem';
     }
-    toggleBtn.addEventListener('click', () => { /* ... */ }); // Simplified
+    
+    toggleBtn.addEventListener('click', () => {
+        if (sidebar.classList.contains('open')) {
+            // Sidebar is open, so close it
+            closeSidebar();
+        } else {
+            // Sidebar is closed, so open it
+            sidebar.classList.add('open');
+            document.body.classList.add('sidebar-open');
+            if (overlay) overlay.classList.add('show');
+            
+            // Move toggle button to the right when sidebar is open
+            toggleBtn.style.left = '340px';
+        }
+    });
+    
     if (overlay) overlay.addEventListener('click', closeSidebar);
-    document.addEventListener('click', (e) => { /* ... */ }); // Simplified
-    document.addEventListener('keydown', (e) => { /* ... */ }); // Simplified
+    
+    document.addEventListener('click', (e) => {
+        if (
+            sidebar.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            e.target !== toggleBtn &&
+            !toggleBtn.contains(e.target)
+        ) {
+            closeSidebar();
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+            closeSidebar();
+        }
+    });
 }
 
 export function updateSidebarToggleVisibility() {

@@ -106,7 +106,7 @@ describe('UI Functions', () => {
 
         test('should create event checkboxes', () => {
             const mockEvents = [
-                { eventid: '1', name: 'Test Event' }
+                { eventid: '1', name: 'Test Event', date: '2024-01-15', sectionname: 'Test Section' }
             ];
             const mockCallback = jest.fn();
 
@@ -121,6 +121,8 @@ describe('UI Functions', () => {
                 { 
                     eventid: '1', 
                     name: 'Test Event',
+                    date: '2024-01-15',
+                    sectionname: 'Test Section',
                     yes: 10,
                     no: 3,
                     yes_members: 5,
@@ -196,10 +198,10 @@ describe('UI Functions', () => {
 
             // Filters are inside the summary tab content
             const summaryContent = document.getElementById('summary-content');
-            expect(summaryContent.innerHTML).toContain('id="section-filter"');
-            expect(summaryContent.innerHTML).toContain('id="event-filter"');
-            expect(summaryContent.innerHTML).toContain('id="status-filter"');
-            expect(summaryContent.innerHTML).toContain('id="name-filter"');
+            expect(summaryContent.innerHTML).toContain('id="summary-section-filter"');
+            expect(summaryContent.innerHTML).toContain('id="summary-event-filter"');
+            expect(summaryContent.innerHTML).toContain('id="summary-status-filter"');
+            expect(summaryContent.innerHTML).toContain('id="summary-name-filter"');
         });
     });
 
