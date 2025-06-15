@@ -2,11 +2,11 @@
 import { 
     renderSectionsTable, 
     renderEventsTable, 
-    renderAttendeesTable,
     showError,
     showSpinner,
     hideSpinner
 } from '../src/ui.js';
+import { renderTabbedAttendanceView } from '../src/ui/attendance.js';
 
 describe('UI Functions', () => {
     beforeEach(() => {
@@ -138,7 +138,7 @@ describe('UI Functions', () => {
         });
     });
 
-    describe('renderAttendeesTable', () => {
+    describe('renderTabbedAttendanceView', () => { // Changed describe block
         test('should render attendees table with grouped data', () => {
             const mockAttendees = [
                 {
@@ -161,23 +161,26 @@ describe('UI Functions', () => {
                 }
             ];
 
-            renderAttendeesTable(mockAttendees);
+            renderTabbedAttendanceView(mockAttendees); // Changed function call
 
             const container = document.getElementById('attendance-panel');
             expect(container.innerHTML).toContain('John');
             expect(container.innerHTML).toContain('Doe');
             expect(container.innerHTML).toContain('Test Event');
-            expect(container.innerHTML).toContain('Filter by Section');
+            // Check for a known part of renderTabbedAttendanceView, e.g., a tab button
+            expect(container.innerHTML).toContain('id="nav-summary-tab"');
         });
 
         test('should handle empty attendees array', () => {
-            renderAttendeesTable([]);
+            renderTabbedAttendanceView([]); // Changed function call
 
             const container = document.getElementById('attendance-panel');
-            expect(container.innerHTML).toContain('No attendees found');
+            // renderTabbedAttendanceView creates the tab structure even if attendees is empty.
+            // The individual tabs (like summary) would show "No attendees found".
+            expect(container.innerHTML).toContain('id="nav-summary-tab"');
         });
 
-        test('should create filter controls', () => {
+        test('should create filter controls inside summary tab', () => {
             const mockAttendees = [
                 {
                     scoutid: '1',
@@ -189,12 +192,14 @@ describe('UI Functions', () => {
                 }
             ];
 
-            renderAttendeesTable(mockAttendees);
+            renderTabbedAttendanceView(mockAttendees); // Changed function call
 
-            expect(document.getElementById('section-filter')).toBeTruthy();
-            expect(document.getElementById('event-filter')).toBeTruthy();
-            expect(document.getElementById('status-filter')).toBeTruthy();
-            expect(document.getElementById('name-filter')).toBeTruthy();
+            // Filters are inside the summary tab content
+            const summaryContent = document.getElementById('summary-content');
+            expect(summaryContent.innerHTML).toContain('id="section-filter"');
+            expect(summaryContent.innerHTML).toContain('id="event-filter"');
+            expect(summaryContent.innerHTML).toContain('id="status-filter"');
+            expect(summaryContent.innerHTML).toContain('id="name-filter"');
         });
     });
 

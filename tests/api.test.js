@@ -1,5 +1,6 @@
 // API Tests - Test all OSM API interactions
-import { getUserRoles, getMostRecentTermId, getEvents, getEventAttendance, getToken } from '../src/api.js';
+import { getUserRoles, getMostRecentTermId, getEvents, getEventAttendance } from '../src/lib/api.js';
+import { getToken } from '../src/lib/auth.js';
 
 // Mock fetch globally
 global.fetch = jest.fn();

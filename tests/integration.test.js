@@ -1,11 +1,13 @@
 // Integration Tests - Test complete user workflows
-import { getUserRoles, getEvents, getEventAttendance, getMostRecentTermId } from '../src/api.js';
+import { getUserRoles, getEvents, getEventAttendance, getMostRecentTermId } from '../src/lib/api.js'; // Corrected path
 
 // Mock all API functions
-jest.mock('../src/api.js');
+jest.mock('../src/lib/api.js'); // Corrected path
 jest.mock('../src/ui.js');
+jest.mock('../src/ui/attendance.js'); // Added mock for attendance UI
 
-import { renderSectionsTable, renderEventsTable, renderAttendeesTable, showError, showSpinner, hideSpinner } from '../src/ui.js';
+import { renderSectionsTable, renderEventsTable, showError, showSpinner, hideSpinner } from '../src/ui.js'; // renderAttendeesTable removed
+import { renderTabbedAttendanceView } from '../src/ui/attendance.js'; // Added import
 
 // Since handleSectionSelect and handleEventSelect are not exported, 
 // we'll test the functionality they represent rather than the functions directly
@@ -115,14 +117,14 @@ describe('Integration Tests', () => {
             expect(renderEventsTable).toHaveBeenCalledWith(mockEvents, mockCallback, true);
         });
 
-        test('should render attendees table', () => {
+        test('should render attendees table', () => { // Test name can remain, or change to renderTabbedAttendanceView
             const mockAttendees = [
                 { scoutid: '1', firstname: 'John', attending: 'Yes' }
             ];
 
-            renderAttendeesTable(mockAttendees);
+            renderTabbedAttendanceView(mockAttendees); // Changed function call
 
-            expect(renderAttendeesTable).toHaveBeenCalledWith(mockAttendees);
+            expect(renderTabbedAttendanceView).toHaveBeenCalledWith(mockAttendees); // Changed expectation
         });
     });
 

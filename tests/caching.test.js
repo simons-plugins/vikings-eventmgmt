@@ -15,11 +15,11 @@ Object.defineProperty(global, 'localStorage', {
 });
 
 // Mock API functions
-jest.mock('../src/api.js', () => ({
+jest.mock('../src/lib/api.js', () => ({ // Corrected path
     getUserRoles: jest.fn()
 }));
 
-import { getUserRoles } from '../src/api.js';
+import { getUserRoles } from '../src/lib/api.js'; // Corrected path
 
 describe('Section Caching', () => {
     beforeEach(() => {
