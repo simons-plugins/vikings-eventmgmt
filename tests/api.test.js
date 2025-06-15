@@ -30,14 +30,24 @@ describe('API Functions', () => {
                 { sectionid: '2', sectionname: '2nd Guildford Scout Group' }
             ];
 
+            // Mock the new response format with numbered keys + _rateLimitInfo
+            const mockResponse = {
+                "0": mockRoles[0],
+                "1": mockRoles[1],
+                "_rateLimitInfo": {
+                    "osm": { "limit": 1000, "remaining": 995 },
+                    "backend": { "limit": 100, "remaining": 96 }
+                }
+            };
+
             sessionStorage.setItem('access_token', 'test-token');
             fetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ data: mockRoles })
+                json: async () => mockResponse
             });
 
             const roles = await getUserRoles();
-            expect(roles).toEqual({ data: mockRoles }); // API returns wrapped data
+            expect(roles).toEqual(mockRoles); // Now returns array directly
             expect(fetch).toHaveBeenCalledWith(
                 expect.stringContaining('/get-user-roles'),
                 expect.objectContaining({
