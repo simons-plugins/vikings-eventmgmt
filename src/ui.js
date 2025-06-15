@@ -12,6 +12,7 @@ let currentSpinnerType = SPINNER_TYPES.DOTS;
 // Corrected paths for when ui.js is in src/ui.js
 import { loadSectionsFromCacheOrAPI } from './lib/cache.js';
 import { addLogoutButton } from './lib/auth.js';
+import { mountVueApp } from './vue-entry.js'; // Import the Vue app mounter
 
 // Function to change default spinner type
 export function setDefaultSpinner(type) {
@@ -225,18 +226,45 @@ function addMobileExpandFunctionality() { /* ... */ }
 export function showMainUI() {
     const mainContainer = document.querySelector('main');
     if (!mainContainer) { console.error('Main container not found'); return; }
-    mainContainer.innerHTML = `<div class="container-fluid p-0"><div class="row no-gutters"><div class="col-12"><div id="app-content"><div id="attendance-panel" class="mt-4"><div class="card shadow-sm h-100"><div class="card-header bg-info text-white"><h5 class="mb-0">Attendance Details</h5></div><div class="card-body"><p class="text-muted text-center">Use the sidebar to load sections and events, then view attendance details here.</p></div></div></div></div></div></div></div>`;
+
+    // Ensure the main container is visible, as it might be hidden by other states
+    mainContainer.style.display = 'block';
+    mainContainer.className = 'container-fluid p-0'; // Reset class to ensure it's not 'container' from login/blocked states
+
+    mainContainer.innerHTML = `
+        <div class="row no-gutters">
+            <div class="col-12">
+                <div id="app-content">
+                    <div id="vue-app"></div> <!-- Vue app mount point -->
+                    <div id="attendance-panel" class="mt-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Attendance Details</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted text-center">Use the sidebar to load sections and events, then view attendance details here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    // Initialize sidebar and logout button first to ensure base UI is structured
     initializeSidebar();
+    addLogoutButton(); // Moved from main.js to be part of UI setup consistency
+
     const sidebarContent = document.querySelector('.sidebar-content');
-    if (!sidebarContent) {
-        console.warn('Sidebar content not found, recreating...');
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) {
-            sidebar.innerHTML = `<div class="sidebar-header"><h3>Sections & Events</h3></div><div class="sidebar-content"><div id="sections-table-container"></div><div id="events-table-container" class="mt-3"></div></div>`;
-        }
+    if (!sidebarContent) { // This check might be redundant if initializeSidebar handles its creation
+        console.warn('Sidebar content not found, attempting to recreate or handle...');
+        // Potentially recreate sidebar structure if initializeSidebar doesn't robustly do it.
+        // For now, assume initializeSidebar correctly sets up what it needs.
     }
-    addLogoutButton(); // Imported from ../lib/auth.js
-    console.log('Main UI initialized - ready for sidebar interaction');
+
+    // Mount the Vue app after the main UI DOM structure is in place
+    mountVueApp();
+
+    console.log('Main UI initialized, Vue app mounting initiated.');
 }
 
 function initializeSidebar() { // Internal helper for showMainUI
@@ -301,13 +329,62 @@ export function showBlockedScreen() {
     document.body.classList.add('login-screen');
     updateSidebarToggleVisibility();
     mainContainer.style.display = 'block';
-    mainContainer.className = 'container';
-    mainContainer.innerHTML = `<div class="row justify-content-center"><div class="col-12 col-sm-10 col-md-8 col-lg-6"><div class="card shadow border-danger mb-4"><div class="card-header bg-danger text-white text-center"><h3 class="mb-0">🚨 CRITICAL ERROR</h3></div><div class="card-body text-center p-4"><div class="alert alert-danger mb-4"><h4 class="alert-heading">API Access Blocked!</h4><p class="mb-0">This application has been <strong>blocked by Online Scout Manager</strong> and can no longer access OSM data.</p></div><div class="mb-4"><i class="fas fa-ban text-danger" style="font-size: 4rem;"></i></div><h5 class="text-danger mb-3">Application Suspended</h5><p class="text-muted mb-4">All API functionality has been disabled. <strong>Contact admin.</strong></p><div class="bg-light p-3 rounded mb-4"><small class="text-muted"><strong>Blocked at:</strong> ${new Date().toLocaleString()}<br><strong>Session ID:</strong> ${sessionStorage.getItem('access_token')?.substring(0, 12) || 'N/A'}...</small></div><button onclick="alert('Application is blocked. Contact administrator.')" class="btn btn-danger btn-lg disabled mb-3"><i class="fas fa-ban me-2"></i>Application Blocked</button><div class="mt-3"><small class="text-muted"><a href="#" onclick="if(confirm('Clear blocked status?')) { sessionStorage.removeItem('osm_blocked'); window.location.reload(); }" class="text-secondary">Admin: Clear Blocked Status</a></small></div></div></div></div></div>`;
+    mainContainer.className = 'container'; // Keep this class for styling the overall container
+    // The #app-content and #vue-app divs are added here to ensure the mount point exists,
+    // even if the content of #vue-app might be hidden or overlaid by the blocked screen message.
+    mainContainer.innerHTML = `
+        <div id="app-content">
+            <div id="vue-app"></div> <!-- Vue mount point -->
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                <div class="card shadow border-danger mb-4">
+                    <div class="card-header bg-danger text-white text-center">
+                        <h3 class="mb-0">🚨 CRITICAL ERROR</h3>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="alert alert-danger mb-4">
+                            <h4 class="alert-heading">API Access Blocked!</h4>
+                            <p class="mb-0">This application has been <strong>blocked by Online Scout Manager</strong> and can no longer access OSM data.</p>
+                        </div>
+                        <div class="mb-4"><i class="fas fa-ban text-danger" style="font-size: 4rem;"></i></div>
+                        <h5 class="text-danger mb-3">Application Suspended</h5>
+                        <p class="text-muted mb-4">All API functionality has been disabled. <strong>Contact admin.</strong></p>
+                        <div class="bg-light p-3 rounded mb-4">
+                            <small class="text-muted"><strong>Blocked at:</strong> ${new Date().toLocaleString()}<br>
+                            <strong>Session ID:</strong> ${sessionStorage.getItem('access_token')?.substring(0, 12) || 'N/A'}...</small>
+                        </div>
+                        <button onclick="alert('Application is blocked. Contact administrator.')" class="btn btn-danger btn-lg disabled mb-3">
+                            <i class="fas fa-ban me-2"></i>Application Blocked
+                        </button>
+                        <div class="mt-3">
+                            <small class="text-muted"><a href="#" onclick="if(confirm('Clear blocked status?')) { sessionStorage.removeItem('osm_blocked'); window.location.reload(); }" class="text-secondary">Admin: Clear Blocked Status</a></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
 }
 
 export function showLoadingState() {
     const mainContainer = document.querySelector('main.container') || document.querySelector('main');
     if (!mainContainer) { console.error('Main container not found for loading state'); return; }
     mainContainer.style.display = 'block';
-    mainContainer.innerHTML = `<div class="row justify-content-center"><div class="col-12 col-sm-8 col-md-6 col-lg-4"><div class="card shadow-sm mb-4"><div class="card-body text-center"><div class="spinner-border text-primary mb-3" role="status"><span class="sr-only">Loading...</span></div><p class="text-muted">Loading application...</p></div></div></div></div>`;
+    // Ensure #app-content and #vue-app are present. The loading spinner will overlay this.
+    mainContainer.innerHTML = `
+        <div id="app-content">
+            <div id="vue-app"></div> <!-- Vue mount point -->
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-8 col-md-6 col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                        <p class="text-muted">Loading application...</p>
+                    </div>
+                </div>
+            </div>
+        </div>`;
 }

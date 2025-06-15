@@ -95,7 +95,9 @@ export function showLoginScreen() {
                             style="font-size:1.5em; white-space: normal; line-height: 1.2;">
                             Login with<br>Online Scout Manager (OSM)
                         </button>
-                        <div id="app-content"></div>
+                        <div id="app-content">
+                            <div id="vue-app"></div> <!-- Vue app mount point -->
+                        </div>
                     </div>
                 </div>
             </div>

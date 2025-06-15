@@ -33,6 +33,7 @@
     -->
     
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../dist/bundle.css"> <!-- Vue bundle CSS -->
     
     <!-- Sentry -->
     <script 
@@ -115,7 +116,9 @@
                             style="font-size:1.5em; white-space: normal; line-height: 1.2;">
                             Login with<br>Online Scout Manager (OSM)
                         </button>
-                        <div id="app-content"></div>
+                        <div id="app-content">
+                            <div id="vue-app"></div> <!-- Vue app will mount here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -145,5 +148,6 @@
 
     <!-- Only your main script -->
     <script type="module" src="main.js"></script>
+    <script src="../dist/bundle.js"></script> <!-- Vue bundle -->
 </body>
 </html>
