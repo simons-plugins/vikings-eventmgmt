@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikings Event Planner</title>
+    <style>
+        body { font-family: sans-serif; }
+        .planner-container { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; }
+        .camp-group-box {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            min-height: 200px;
+            width: 250px; /* Adjusted width for better layout */
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .camp-group-box h3 { margin-top: 0; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .camp-group-box p.group-description { font-size: 0.8em; text-align: center; color: #555; min-height: 2.5em; }
+        .scout-list { min-height: 150px; /* Ensure drop area is available */}
+        .scout-card {
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            cursor: grab;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .scout-card strong { display: block; margin-bottom: 3px; }
+        .scout-card .skill { font-size: 0.85em; color: #777; }
+        .scout-card.dragging { opacity: 0.5; transform: scale(1.05); }
+        .drag-over { background-color: #e0ffe0; border-style: solid; border-color: #8fbc8f; } /* Light green for drop hint */
+        .controls { margin: 20px; padding: 10px; border-top: 1px solid #eee; text-align: center; }
+        .controls button { padding: 10px 15px; margin: 0 10px; font-size: 1em; cursor: pointer; border-radius: 5px; border: 1px solid #ccc; }
+        .controls button#saveChanges { background-color: #4CAF50; color: white; }
+        .controls button#cancelChanges { background-color: #f44336; color: white; }
+        .controls button:disabled { background-color: #ddd; cursor: not-allowed; }
+        .status-message { margin-top: 15px; font-weight: bold; padding: 10px; border-radius: 5px; text-align: center; }
+        .status-message.success { background-color: #d4edda; color: #155724; }
+        .status-message.error { background-color: #f8d7da; color: #721c24; }
+        .status-message.info { background-color: #cce5ff; color: #004085; }
+    </style>
+</head>
+<body>
+
+    <h1>Vikings Event Planner</h1>
+
+    <div class="controls">
+        <button id="saveChanges" disabled>Save Changes</button>
+        <button id="cancelChanges" disabled>Cancel Changes</button>
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+
+    <div class="planner-container" id="plannerContainer">
+        <%# Camp group boxes will be rendered here by JavaScript %>
+    </div>
+
+    <script>
+        // IMPORTANT: Replace this mock data with actual data passed from your EJS backend context.
+        // For example, if your backend passes 'scouts' and 'campGroups' to the EJS template:
+        // const initialScoutData = <%- JSON.stringify(scouts || []) %>;
+        // const campGroupDefinitions = <%- JSON.stringify(campGroups || []) %>;
+
+        // Using example mock data for standalone testing:
+        const initialScoutData = [
+          { id: 's1', name: 'Ragnar Lothbrok', skill_level: 'Legendary', campGroup: 'Group 1' },
+          { id: 's2', name: 'Lagertha Shieldmaiden', skill_level: 'Epic', campGroup: 'Group 1' },
+          { id: 's3', name: 'Bjorn Ironside', skill_level: 'Epic', campGroup: 'Group 2' },
+          { id: 's4', name: 'Floki Boatbuilder', skill_level: 'Rare', campGroup: 'Group 1' },
+          { id: 's5', name: 'Ubbe Ragnarsson', skill_level: 'Epic', campGroup: 'Group 3' },
+          { id: 's6', name: 'Ivar The Boneless', skill_level: 'Legendary', campGroup: null } // Represents unassigned
+        ];
+
+        const campGroupDefinitions = [
+          { id: 'cg1', name: 'Group 1', description: 'The Vanguards - Lead the charge!' },
+          { id: 'cg2', name: 'Group 2', description: 'The Berserkers - Fierce warriors.' },
+          { id: 'cg3', name: 'Group 3', description: 'The Strategists - Plan the moves.' },
+          { id: 'unassigned', name: 'Unassigned', description: 'Scouts awaiting assignment or resting.'} // A box for null/undefined campGroup
+        ];
+    </script>
+
+    <script src="/src/vikingsEventPlanner.js"></script> <%# Adjust path if necessary from root %>
+
+</body>
+</html>
