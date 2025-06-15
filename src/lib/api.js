@@ -1,3 +1,8 @@
+// src/lib/api.js
+// This module is the central handler for all HTTP requests to the backend API.
+// It abstracts data fetching logic, including token management, error handling,
+// and rate limit monitoring, providing a consistent interface for API interactions.
+
 // Imports from auth.js
 import { getToken, isTokenValid, handleTokenExpiration } from './auth.js';
 
@@ -6,14 +11,16 @@ const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
 
 console.log('Using Backend URL:', BACKEND_URL);
 
-// Check if OSM API access has been blocked
+// Checks a sessionStorage flag ('osm_blocked') to see if OSM API access
+// has been previously identified as blocked. Throws an error if blocked.
 function checkIfBlocked() {
     if (sessionStorage.getItem('osm_blocked') === 'true') {
         throw new Error('OSM API access has been blocked. Please contact the system administrator.');
     }
 }
 
-// Clear blocked status (for admin use)
+// Removes the 'osm_blocked' flag from sessionStorage.
+// This is intended for administrative use to re-enable API access after a block.
 export function clearBlockedStatus() {
     sessionStorage.removeItem('osm_blocked');
     console.log('OSM blocked status cleared');
@@ -68,9 +75,10 @@ function logRateLimitInfo(responseData, apiName) {
 
 // Enhanced API response handler with new rate limit monitoring
 async function handleAPIResponseWithRateLimit(response, apiName) {
-    // Handle rate limiting (429 status)
+    // Handle rate limiting (HTTP 429 Too Many Requests).
+    // This can be triggered by either the OSM API or the backend itself.
     if (response.status === 429) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await response.json().catch(() => ({})); // Attempt to parse error details
         
         // Check if this is OSM rate limiting or backend rate limiting
         if (errorData.rateLimitInfo) {
@@ -83,22 +91,24 @@ async function handleAPIResponseWithRateLimit(response, apiName) {
                 throw new Error('OSM API rate limit exceeded. Please wait before trying again.');
             }
         } else {
+            // General backend rate limiting message.
             console.warn(`🚫 ${apiName} rate limited. Backend managing request flow.`);
             throw new Error('Rate limited. The backend is managing request flow to prevent blocking.');
         }
     }
     
-    // Handle authentication errors
+    // Handle authentication errors (HTTP 401 Unauthorized, HTTP 403 Forbidden).
+    // Triggers token expiration handling.
     if (response.status === 401 || response.status === 403) {
         console.warn(`🔐 Authentication error on ${apiName}: ${response.status}`);
-        handleTokenExpiration();
+        handleTokenExpiration(); // Clear token and prompt for login
         return null;
     }
     
-    // Handle other HTTP errors
+    // Handle other non-successful HTTP responses.
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+        const errorData = await response.json().catch(() => ({})); // Attempt to parse error details
+        const errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`; // Extract error message
         
         // Check for OSM blocking/critical errors
         if (errorMessage && typeof errorMessage === 'string') {
@@ -114,28 +124,31 @@ async function handleAPIResponseWithRateLimit(response, apiName) {
         throw new Error(`${apiName} failed: ${errorMessage}`);
     }
     
-    // Parse JSON response
+    // If the response is OK, attempt to parse it as JSON.
     try {
         const data = await response.json();
         
-        // Log rate limit info if available
+        // Log rate limit information included in the response.
         logRateLimitInfo(data, apiName);
         
-        // Check for token expiration in response data
+        // Validate the token if present in the response data (some endpoints might return it).
         if (!isTokenValid(data)) {
             console.warn(`🔐 Token invalid in ${apiName} response`);
-            handleTokenExpiration();
+            handleTokenExpiration(); // Clear token and prompt for login
             return null;
         }
         
-        return data;
+        return data; // Return the parsed data
     } catch (jsonError) {
+        // Handle cases where JSON parsing fails.
         console.error(`❌ ${apiName} returned invalid JSON`);
         throw new Error(`${apiName} returned invalid response`);
     }
 }
 
-// Optional rate limit status checker
+// Optional rate limit status checker.
+// Fetches current rate limit status from the backend.
+// Returns an object with rate limit details (osm and backend) or null on failure.
 export async function checkRateLimitStatus() {
     try {
         const response = await fetch(`${BACKEND_URL}/rate-limit-status`, {
@@ -157,6 +170,10 @@ export async function checkRateLimitStatus() {
     return null;
 }
 
+// Fetches terms for a given section.
+// sectionId: The ID of the section for which to fetch terms.
+// Returns an array of term objects for the specified section, or an empty array on failure.
+// Expected term object structure: { termid: string, name: string, startdate: string, enddate: string, ... }
 export async function getTermsForSection(sectionId) {
     const token = getToken();
     if (!token) return [];
@@ -166,9 +183,13 @@ export async function getTermsForSection(sectionId) {
         body: JSON.stringify({ access_token: token })
     });
     const data = await handleAPIResponseWithRateLimit(response, 'getTermsForSection');
+    // The API returns an object where keys are section IDs and values are arrays of terms.
     return data ? (data[sectionId] || []) : [];
 }
 
+// Fetches the most recent term ID for a given section.
+// sectionId: The ID of the section.
+// Returns the termid (string) of the most recent term, or null if not found or on error.
 export async function getMostRecentTermId(sectionId) {
     try {
         const token = getToken();
@@ -230,6 +251,9 @@ export async function getMostRecentTermId(sectionId) {
     }
 }
 
+// Fetches the roles (sections) associated with the current authenticated user.
+// Returns an array of section objects.
+// Expected section object structure: { sectionid: string, sectionname: string, groupname: string, ... }
 export async function getUserRoles() {
     try {
         const token = getToken();
@@ -262,6 +286,11 @@ export async function getUserRoles() {
     }
 }
 
+// Fetches events for a specific section and term.
+// sectionid: The ID of the section.
+// termid: The ID of the term.
+// Returns an object, typically { items: [...] }, where items is an array of event objects.
+// Expected event object structure: { eventid: string, name: string, startdate: string, ... }
 export async function getEvents(sectionid, termid) {
     try {
         const token = getToken();
@@ -285,6 +314,12 @@ export async function getEvents(sectionid, termid) {
     }
 }
 
+// Fetches attendance data for a specific event.
+// sectionId: The ID of the section.
+// eventId: The ID of the event.
+// termId: The ID of the term.
+// Returns an object, typically { items: [...] }, where items is an array of attendance records.
+// Expected attendance record structure: { memberid: string, firstname: string, lastname: string, attended: boolean, ... }
 export async function getEventAttendance(sectionId, eventId, termId) {
     try {
         const token = getToken();
@@ -319,6 +354,11 @@ export async function getEventAttendance(sectionId, eventId, termId) {
     }
 }
 
+// Fetches flexi-attendance records for a section.
+// sectionId: The ID of the section.
+// archived: (Optional) 'y' to fetch archived records, 'n' for current (defaults to 'n').
+// Returns an object, typically { items: [...] }, where items is an array of flexi-record objects.
+// Expected flexi-record structure: { record_id: string, member_id: string, date_given: string, ... }
 export async function getFlexiRecords(sectionId, archived = 'n') {
     try {
         // Check if API access has been blocked
@@ -349,7 +389,9 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
     }
 }
 
-// Test backend connectivity
+// Tests the connectivity to the backend server.
+// Makes a GET request to the /health endpoint.
+// Returns true if the backend responds with HTTP 200, false otherwise.
 export async function testBackendConnection() {
     try {
         console.log('Testing backend connection to:', BACKEND_URL);

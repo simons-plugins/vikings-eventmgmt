@@ -1,3 +1,8 @@
+// src/main.js
+// This file serves as the primary entry point for the application.
+// It is responsible for initializing the application, handling authentication,
+// loading initial data, and setting up the main UI components.
+
 // ===== LOADING ANIMATION CONFIGURATION =====
 // Choose your preferred loading animation:
 // 'dots' = Pulsing dots (minimal, clean)
@@ -45,6 +50,8 @@ import {
 let currentSections = [];
 
 // Add this function to check for required elements before initialization:
+// Returns a Promise that resolves when the DOM is fully loaded,
+// ensuring that scripts execute only after the document structure is ready.
 function waitForDOM() {
     return new Promise((resolve) => {
         if (document.readyState === 'loading') {
@@ -62,6 +69,8 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
     try {
         const mainContainer = document.querySelector('main.container') || document.querySelector('main');
         if (mainContainer) {
+            // Hide the main container initially to prevent Flash of Unstyled Content (FOUC)
+            // while the application is loading and initializing.
             mainContainer.style.display = 'none'; // Prevent FOUC
         }
         
@@ -75,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
         // checkForToken will show login or basic main UI (without data)
         await checkForToken(); // Imported from lib/auth.js
         
-        // If user is authenticated (i.e., not on login screen), load and render sections
+        // If user is authenticated (i.e., not on login screen), load and render sections.
         // The body will not have 'login-screen' class if authenticated.
         if (!document.body.classList.contains('login-screen')) {
             const sectionsContainer = document.getElementById('sections-table-container');
@@ -85,8 +94,10 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
             try {
                 const sectionsData = await loadSectionsFromCacheOrAPI(); // Imported from lib/cache.js
                 if (sectionsData) {
+                    // Update the global currentSections variable with the loaded data.
                     currentSections = sectionsData; // Update global currentSections
-                    // Render sections table, passing the actual currentSections for the callback
+                    // Render the sections table with the loaded sections.
+                    // The handleSectionSelect callback is provided to handle section selection events.
                     renderSectionsTable(currentSections, (selectedIds) => {
                         handleSectionSelect(selectedIds, currentSections); // handleSectionSelect from lib/handlers.js
                     });
@@ -109,6 +120,8 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
     }
 });
 
+// Displays a generic error message directly in the DOM when critical initialization fails.
+// This provides a user-friendly way to suggest a page refresh.
 function showFallbackError() {
     const body = document.body;
     if (body) {
