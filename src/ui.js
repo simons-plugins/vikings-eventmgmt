@@ -8,6 +8,10 @@ const SPINNER_TYPES = {
 // Default spinner type - will be set from main.js
 let currentSpinnerType = SPINNER_TYPES.DOTS;
 
+// --- Imports for moved functions (will be needed) ---
+import { loadSectionsFromCacheOrAPI } from './lib/cache.js';
+import { addLogoutButton } from './lib/auth.js';
+
 // Function to change default spinner type
 export function setDefaultSpinner(type) {
     if (Object.values(SPINNER_TYPES).includes(type)) {
@@ -979,3 +983,6 @@ function getAttendanceBadgeClass(attending) {
 function getAttendanceStatus(attending) {
     return attending || 'Unknown';
 }
+
+// --- UI functions moved from main.js will be appended below ---
+// (Content from previous overwrite_file_with_block will be prepended here by the tool)

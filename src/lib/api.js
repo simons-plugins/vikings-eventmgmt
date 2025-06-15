@@ -1,3 +1,6 @@
+// Imports from auth.js
+import { getToken, isTokenValid, handleTokenExpiration } from './auth.js';
+
 // Always use production backend - simplifies configuration and avoids local setup issues
 const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
 
@@ -152,63 +155,6 @@ export async function checkRateLimitStatus() {
         console.warn('Could not fetch rate limit status:', error);
     }
     return null;
-}
-
-export function getToken() {
-    return sessionStorage.getItem('access_token'); // <-- changed
-}
-
-// Add token validation function:
-export function isTokenValid(responseData) {
-    // Check if the response indicates token expiration or authentication errors
-    if (responseData && (
-        (responseData.status === false && responseData.error && responseData.error.code === 'access-error-2') ||
-        responseData.error === 'Invalid access token' ||
-        responseData.message === 'Unauthorized' ||
-        responseData.error === 'Token expired'
-    )) {
-        return false;
-    }
-    return true;
-}
-
-export function handleTokenExpiration() {
-    console.log('Token expired - redirecting to login');
-    // Clear expired token
-    sessionStorage.removeItem('access_token');
-    
-    // Clear any cached data
-    localStorage.removeItem('viking_sections_cache');
-    
-    // Check if we're in a test environment (Jest/JSDOM)
-    const isTestEnvironment = typeof jest !== 'undefined' || 
-                             (typeof window !== 'undefined' && window.navigator && window.navigator.userAgent === 'jsdom');
-    
-    if (isTestEnvironment) {
-        console.log('Test environment detected - skipping alert and page reload');
-        return;
-    }
-    
-    // Show a message to the user (browser only)
-    if (typeof window !== 'undefined' && window.alert) {
-        alert('Your session has expired. Please log in again.');
-    }
-    
-    // Force a full page reload to reset the app state (browser only)
-    if (typeof window !== 'undefined' && window.location) {
-        window.location.reload();
-    }
-}
-
-// Clear authentication token (logout)
-export function clearToken() {
-    sessionStorage.removeItem('access_token');
-    console.log('Authentication token cleared');
-}
-
-// Check if user is authenticated
-export function isAuthenticated() {
-    return !!getToken();
 }
 
 export async function getTermsForSection(sectionId) {
