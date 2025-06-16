@@ -57,6 +57,7 @@
     "vite": "^6.3.5"
   },
   "devDependencies": {
+    "@cypress/vite-dev-server": "^6.0.3",
     "@sentry/vite-plugin": "^3.5.0"
   }
 }

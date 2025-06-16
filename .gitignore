@@ -1,3 +1,13 @@
+# Temporary/backup files
+package-*.json
+test-*.js
+build.js
+webpack.config.js
+babel.config.js
+*.backup
+
+# Don't ignore cypress.config.js - it's needed for E2E tests
+
 # Environment variables
 .env
 .env.local
@@ -54,3 +64,9 @@ coverage/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Sentry configuration files (sensitive)
+.sentryclirc
+.env.sentry-build-plugin
+sentry.properties
+.env.sentry
