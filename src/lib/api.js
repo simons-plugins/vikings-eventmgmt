@@ -251,14 +251,27 @@ export async function getUserRoles() {
 
         const data = await handleAPIResponseWithRateLimit(response, 'getUserRoles');
 
-        // Transform the returned object into an array of sections
-        const sections = Object.values(data).filter(item => typeof item === 'object' && item.sectionid);
+        // Handle case where data might be null/undefined
+        if (!Array.isArray(data)) {
+            return [];
+        }
 
-        return sections || [];
+        // Filter out adults section and extract only section details
+        const sections = data
+            .filter(item => item.section !== 'adults') // Exclude adults section
+            .map(item => ({
+                sectionid: item.sectionid,
+                sectionname: item.sectionname,
+                section: item.section,
+                isDefault: item.isDefault === "1",
+                permissions: item.permissions
+            }));
+
+        return sections;
 
     } catch (error) {
         console.error('Error fetching user roles:', error);
-        throw error;
+        return [];
     }
 }
 

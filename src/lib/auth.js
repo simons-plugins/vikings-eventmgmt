@@ -19,7 +19,7 @@ const scope = 'section:member:read section:programme:read section:event:read sec
 // --- Auth functions originally from api.js ---
 // Retrieves the access token from sessionStorage.
 export function getToken() {
-    return sessionStorage.getItem('access_token');
+    return sessionStorage.getItem('access_token'); // Updated to match the key used in success.js
 }
 
 // Checks specific error conditions in API responses that indicate an invalid or expired token.

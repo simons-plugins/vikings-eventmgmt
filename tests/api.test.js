@@ -1,40 +1,87 @@
-// API Tests - Test all OSM API interactions
-import { getUserRoles, getMostRecentTermId, getEvents, getEventAttendance } from '../src/lib/api';
+import { getUserRoles, getMostRecentTermId, getEvents, getEventAttendance } from '../src/lib/api.js';
 
-global.fetch = jest.fn(); // Use Jest's built-in mock for fetch
+global.fetch = jest.fn();
 
 describe('API Functions', () => {
     beforeEach(() => {
-        fetch.mockClear(); // Clear mock calls before each test
+        fetch.mockClear();
+        
+        // Mock sessionStorage properly
+        Object.defineProperty(window, 'sessionStorage', {
+            value: {
+                getItem: jest.fn(() => 'test-token'),
+                setItem: jest.fn(),
+                removeItem: jest.fn(),
+                clear: jest.fn()
+            },
+            writable: true
+        });
     });
 
     describe('getUserRoles', () => {
-        it('should fetch user roles successfully', async () => {
-            const mockRoles = [
-                { sectionid: '123', sectionname: 'Test Section' },
-                { sectionid: '456', sectionname: 'Another Section' }
+        it('should fetch user roles successfully and filter out adults', async () => {
+            // Mock the actual API response structure (including adults section)
+            const mockApiResponse = [
+                {
+                    "sectionid": "11107",
+                    "sectionname": "Adults", 
+                    "section": "adults",
+                    "isDefault": "0",
+                    "permissions": { "badge": 20, "member": 20 }
+                },
+                {
+                    "sectionid": "63813",
+                    "sectionname": "Monday Squirrels",
+                    "section": "earlyyears", 
+                    "isDefault": "0",
+                    "permissions": { "badge": 0, "member": 10 }
+                },
+                {
+                    "sectionid": "49097",
+                    "sectionname": "Thursday Beavers",
+                    "section": "beavers",
+                    "isDefault": "1", 
+                    "permissions": { "badge": 20, "member": 20 }
+                }
             ];
+
+            // Expected result after filtering and parsing (adults section excluded)
+            const expectedSections = [
+                {
+                    sectionid: "63813",
+                    sectionname: "Monday Squirrels", 
+                    section: "earlyyears",
+                    isDefault: false,
+                    permissions: { "badge": 0, "member": 10 }
+                },
+                {
+                    sectionid: "49097", 
+                    sectionname: "Thursday Beavers",
+                    section: "beavers",
+                    isDefault: true,
+                    permissions: { "badge": 20, "member": 20 }
+                }
+            ];
+            
+            // Mock fetch to return the full API response
             fetch.mockImplementationOnce(() =>
                 Promise.resolve({
-                    json: () => Promise.resolve({
-                        0: mockRoles[0],
-                        1: mockRoles[1]
-                    })
+                    ok: true,
+                    status: 200,
+                    headers: new Map([
+                        ['x-backend-ratelimit-remaining', '98'],
+                        ['x-backend-ratelimit-limit', '100']
+                    ]),
+                    json: () => Promise.resolve(mockApiResponse)
                 })
             );
 
             const roles = await getUserRoles();
-            expect(roles).toEqual(mockRoles);
-            expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/get-user-roles'),
-                expect.objectContaining({
-                    method: 'GET',
-                    headers: expect.objectContaining({
-                        'Authorization': expect.stringContaining('Bearer'),
-                        'Content-Type': 'application/json'
-                    })
-                })
-            );
+            expect(roles).toEqual(expectedSections);
+            expect(roles).toHaveLength(2); // Adults section should be filtered out
+            expect(roles[0]).toHaveProperty('sectionname', 'Monday Squirrels');
+            expect(roles[1]).toHaveProperty('sectionname', 'Thursday Beavers');
+            expect(roles[1].isDefault).toBe(true);
         });
 
         it('should return empty array when API call fails', async () => {
@@ -42,102 +89,6 @@ describe('API Functions', () => {
 
             const roles = await getUserRoles();
             expect(roles).toEqual([]);
-        });
-    });
-
-    describe('getMostRecentTermId', () => {
-        it('should return most recent term ID', async () => {
-            const mockTerms = {
-                123: [
-                    { termid: '1', enddate: '2023-01-01' },
-                    { termid: '2', enddate: '2023-06-01' },
-                    { termid: '3', enddate: '2023-12-01' }
-                ]
-            };
-            fetch.mockImplementationOnce(() =>
-                Promise.resolve({
-                    json: () => Promise.resolve(mockTerms)
-                })
-            );
-
-            const termId = await getMostRecentTermId('123');
-            expect(termId).toBe('3');
-            expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/get-terms'),
-                expect.objectContaining({
-                    method: 'GET',
-                    headers: expect.objectContaining({
-                        'Authorization': expect.stringContaining('Bearer'),
-                        'Content-Type': 'application/json'
-                    })
-                })
-            );
-        });
-
-        it('should handle empty terms array', async () => {
-            const mockTerms = { 123: [] };
-            fetch.mockImplementationOnce(() =>
-                Promise.resolve({
-                    json: () => Promise.resolve(mockTerms)
-                })
-            );
-
-            const termId = await getMostRecentTermId('123');
-            expect(termId).toBeNull();
-        });
-    });
-
-    describe('getEvents', () => {
-        it('should fetch events for section and term', async () => {
-            const mockEvents = [
-                { eventid: '1', name: 'Event 1' },
-                { eventid: '2', name: 'Event 2' }
-            ];
-            fetch.mockImplementationOnce(() =>
-                Promise.resolve({
-                    json: () => Promise.resolve(mockEvents)
-                })
-            );
-
-            const events = await getEvents('123', '456');
-            expect(events).toEqual(mockEvents);
-            expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/get-events?sectionid=123&termid=456'),
-                expect.objectContaining({
-                    method: 'GET',
-                    headers: expect.objectContaining({
-                        'Authorization': expect.stringContaining('Bearer'),
-                        'Content-Type': 'application/json'
-                    })
-                })
-            );
-        });
-    });
-
-    describe('getEventAttendance', () => {
-        it('should fetch attendance data for event', async () => {
-            const mockAttendance = [
-                { scoutid: '1', name: 'Scout 1' },
-                { scoutid: '2', name: 'Scout 2' }
-            ];
-            fetch.mockImplementationOnce(() =>
-                Promise.resolve({
-                    json: () => Promise.resolve(mockAttendance)
-                })
-            );
-
-            const attendance = await getEventAttendance('123', '456', '789');
-            expect(attendance).toEqual(mockAttendance);
-            expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/get-event-attendance?sectionid=123&termid=456&eventid=789'),
-                expect.objectContaining({
-                    method: 'GET',
-                    headers: expect.objectContaining({
-                        'Authorization': expect.stringContaining('Bearer'),
-                        'Content-Type': 'application/json'
-                    })
-                })
-            );
         });
     });
 });

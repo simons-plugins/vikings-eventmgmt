@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication Success - Viking Scouts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px;">
+        <h2>Authenticating...</h2>
+        <p>Please wait while we complete your login.</p>
+    </div>
+
+    <script>
+        // Extract the access token from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('access_token');
+
+        if (accessToken) {
+            // Store the token using the same key as getToken() expects
+            sessionStorage.setItem('access_token', accessToken);
+            
+            // Redirect to the main application
+            window.location.href = '/';
+        } else {
+            // Handle the error if no token is found
+            const errorMessage = urlParams.get('error') || 'No access token provided';
+            document.body.innerHTML = `
+                <div style="text-align: center; margin-top: 50px;">
+                    <h1>Authentication Failed</h1>
+                    <p>${errorMessage}</p>
+                    <a href="/" style="color: blue; text-decoration: underline;">Return to Home</a>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -67,7 +67,9 @@ afterAll(() => {
 afterEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
-  sessionStorage.clear();
+  if (sessionStorage && typeof sessionStorage.clear === 'function') {
+    sessionStorage.clear();
+  }
   document.body.innerHTML = '';
   
   // Reset window.innerWidth
