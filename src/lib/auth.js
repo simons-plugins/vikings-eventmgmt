@@ -142,6 +142,11 @@ export function showLoginScreen() {
 // This function is typically called on application load.
 export async function checkForToken() {
     console.log('Checking for token...');
+    
+    // Debug: Check what's in sessionStorage
+    const token = getToken();
+    console.log('getToken() returned:', token ? 'Token found' : 'No token found');
+    
     // First, check if OSM API access has been flagged as blocked.
     if (sessionStorage.getItem('osm_blocked') === 'true') {
         console.error('🚨 Application is blocked - showing blocked screen');
@@ -152,7 +157,6 @@ export async function checkForToken() {
     showLoadingState(); // Display a loading indicator while checking token validity
 
     try {
-        const token = getToken(); // Retrieve token from sessionStorage
         if (token) {
             // If a token exists, attempt to validate it by making a lightweight API call (e.g., fetching user roles).
             console.log('Token found, testing validity...');

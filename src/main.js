@@ -67,6 +67,15 @@ function waitForDOM() {
 
 document.addEventListener('DOMContentLoaded', async function initializeApp() {
     try {
+        // Debug: Check if token exists
+        const token = sessionStorage.getItem('access_token');
+        console.log('Token check on page load:', token ? 'Token found' : 'No token found');
+        console.log('SessionStorage contents:', {
+            access_token: sessionStorage.getItem('access_token'),
+            token_type: sessionStorage.getItem('token_type'),
+            osm_access_token: sessionStorage.getItem('osm_access_token') // Check for old key too
+        });
+        
         const mainContainer = document.querySelector('main.container') || document.querySelector('main');
         if (mainContainer) {
             // Hide the main container initially to prevent Flash of Unstyled Content (FOUC)
@@ -81,7 +90,8 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
             return;
         }
         
-        // checkForToken will show login or basic main UI (without data)
+        // Check for existing token first - this will determine if user is logged in
+        console.log('Calling checkForToken...');
         await checkForToken(); // Imported from lib/auth.js
         
         // If user is authenticated (i.e., not on login screen), load and render sections.
