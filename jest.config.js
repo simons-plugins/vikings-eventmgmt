@@ -46,7 +46,7 @@ export default {
 
   // verbose: Indicates whether each individual test should be reported during the run.
   verbose: true,
-
+ 
   // testEnvironmentOptions: Options that will be passed to the testEnvironment.
   // For 'jsdom', this can include options like the base URL for the simulated environment.
   testEnvironmentOptions: {

@@ -175,3 +175,96 @@ export async function handleEventSelect(selectedEvents, currentSectionsData) {
         hideSpinner();
     }
 }
+
+// Handler for Camp Groups functionality
+export async function handleCampGroupsView(selectedSections, selectedEvents) {
+    try {
+        showSpinner();
+        
+        if (!selectedSections || selectedSections.length === 0) {
+            const container = document.getElementById('camp-groups-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <h4>No Sections Selected</h4>
+                        <p>Please select sections to view camp groups</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        if (!selectedEvents || selectedEvents.length === 0) {
+            const container = document.getElementById('camp-groups-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                        <h4>No Events Selected</h4>
+                        <p>Please select events to view camp groups</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        // Collect all attendees from selected events
+        let allAttendees = [];
+        
+        for (const sectionId of selectedSections) {
+            console.log(`Processing section ${sectionId}`);
+            const termId = await getMostRecentTermId(sectionId);
+            if (!termId) {
+                console.warn(`No termId found for section ${sectionId}`);
+                continue;
+            }
+            
+            console.log(`Found termId ${termId} for section ${sectionId}`);
+            
+            for (const eventId of selectedEvents) {
+                console.log(`Fetching attendance for section ${sectionId}, term ${termId}, event ${eventId}`);
+                try {
+                    const attendance = await getEventAttendance(sectionId, termId, eventId);
+                    console.log(`Retrieved ${attendance.length} attendance records`);
+                    
+                    // Filter for attending members only
+                    const attendingMembers = attendance.filter(member => 
+                        member.attending === 'Yes' || member.attending === 'yes' || member.attending === true
+                    );
+                    
+                    console.log(`Found ${attendingMembers.length} attending members for event ${eventId}`);
+                    allAttendees = allAttendees.concat(attendingMembers);
+                } catch (error) {
+                    console.error(`Error fetching attendance for section ${sectionId}, event ${eventId}:`, error);
+                }
+            }
+        }
+        
+        // Remove duplicates based on scoutid
+        const uniqueAttendees = allAttendees.reduce((unique, attendee) => {
+            const existing = unique.find(a => a.scoutid === attendee.scoutid);
+            if (!existing) {
+                unique.push(attendee);
+            }
+            return unique;
+        }, []);
+        
+        console.log(`Found ${uniqueAttendees.length} unique attendees`);
+        
+        // Enrich with camp group data
+        const enrichedAttendees = await enrichAttendeesWithCampGroups(uniqueAttendees, selectedSections);
+        
+        console.log(`Enriched ${enrichedAttendees.length} attendees with camp group data`);
+        
+        // Import and render the camp groups page
+        const { renderCampGroupsPage } = await import('../ui/camp-groups.js');
+        renderCampGroupsPage(enrichedAttendees);
+        
+    } catch (error) {
+        console.error('Error loading camp groups:', error);
+        showError('Failed to load camp groups: ' + error.message);
+    } finally {
+        hideSpinner();
+    }
+}

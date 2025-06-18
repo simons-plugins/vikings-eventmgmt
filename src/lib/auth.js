@@ -12,7 +12,7 @@ import { showBlockedScreen, showLoadingState, updateSidebarToggleVisibility, sho
 // clientId: The unique identifier for this application registered with Online Scout Manager (OSM).
 const clientId = 'x7hx1M0NExVdSiksH1gUBPxkSTn8besx';
 // scope: Defines the permissions requested from OSM (e.g., reading section members, programme, events).
-const scope = 'section:member:read section:programme:read section:event:read';
+const scope = 'section:member:read section:programme:read section:event:read section:flexirecord:write' ;
 // redirectUri: The URL to which OSM redirects the user after authentication.
 // Note: This is dynamically constructed in the showLoginScreen function based on the current window origin.
 
@@ -81,41 +81,33 @@ export function isAuthenticated() {
 // Displays the login screen, allowing users to authenticate via Online Scout Manager (OSM).
 export function showLoginScreen() {
     console.log('Showing login screen');
-    // Dynamically construct the redirect URI based on the current window's origin.
-    // This ensures the callback works correctly across different deployment environments (e.g., localhost, production).
-    const redirectUri = window.location.origin + '/callback.html';
 
-    // Check if a login button already exists in the DOM.
-    // This can happen if the login screen was previously rendered or is part of the static HTML.
+    // Update the redirect URI to point to the backend callback
+    const redirectUri = 'https://vikings-osm-event-manager.onrender.com/oauth/callback';
+
     const existingLoginBtn = document.getElementById('osm-login-btn');
     if (existingLoginBtn) {
-        // If an existing button is found, ensure the main container is visible
-        // and attach the OAuth click handler to it.
         const mainContainer = document.querySelector('main.container') || document.querySelector('main');
-        if (mainContainer) mainContainer.style.display = 'block'; // Make sure the container is visible
+        if (mainContainer) mainContainer.style.display = 'block';
         existingLoginBtn.onclick = () => {
-            // Construct the OSM OAuth authorization URL.
-            // This URL redirects the user to OSM's login page.
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
-                `client_id=${clientId}&` + // Application's client ID
-                `redirect_uri=${encodeURIComponent(redirectUri)}&` + // Where OSM redirects after auth
-                `scope=${encodeURIComponent(scope)}&` + // Permissions requested
-                `response_type=code`; // OAuth flow type (Authorization Code Grant)
-            window.location.href = authUrl; // Redirect the user to OSM
+                `client_id=${clientId}&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `scope=${encodeURIComponent(scope)}&` +
+                `response_type=code`;
+            window.location.href = authUrl;
         };
-        return; // Login button is set up, no need to create new UI.
+        return;
     }
 
-    // If no existing login button, create the login UI from scratch.
     const mainContainer = document.querySelector('main.container') || document.querySelector('main');
     if (!mainContainer) {
         console.error('Main container not found for login screen');
-        return; // Cannot proceed without a main container
+        return;
     }
 
-    mainContainer.style.display = 'block'; // Ensure the main container is visible
-    mainContainer.className = 'container'; // Reset or set class for styling
-    // Populate the main container with the login UI structure.
+    mainContainer.style.display = 'block';
+    mainContainer.className = 'container';
     mainContainer.innerHTML = `
         <div class="row justify-content-center">
             <div class="col-12 col-sm-8 col-md-6 col-lg-4">
@@ -133,17 +125,15 @@ export function showLoginScreen() {
         </div>
     `;
 
-    // Get the newly created login button and attach the event listener.
     const loginBtn = document.getElementById('osm-login-btn');
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
-            // Construct the OSM OAuth authorization URL, same as above.
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
-            window.location.href = authUrl; // Redirect the user to OSM
+            window.location.href = authUrl;
         });
     }
 }
