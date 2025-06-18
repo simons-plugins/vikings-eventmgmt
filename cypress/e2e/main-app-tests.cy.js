@@ -136,9 +136,16 @@ describe('Viking Scouts Event Management', () => {
 // Test with mock authentication (simplified with custom command)
 describe('Viking Scouts - Authenticated Flow', () => {
   beforeEach(() => {
-    cy.visit('/')
+    // Set up authentication BEFORE visiting the page
+    cy.window().then((win) => {
+      win.sessionStorage.setItem('access_token', 'mock-valid-token')
+      win.sessionStorage.setItem('token_type', 'Bearer')
+    })
+    
+    // Set up API mocks
     cy.mockAuthentication()  // Uses the custom command
-    cy.reload()
+    
+    cy.visit('/')
   })
 
   it('should show main app interface when authenticated', () => {
@@ -156,6 +163,7 @@ describe('Viking Scouts - Authenticated Flow', () => {
     // Clean up
     cy.window().then((win) => {
       win.sessionStorage.removeItem('access_token')
+      win.sessionStorage.removeItem('token_type')
     })
   })
 })

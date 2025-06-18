@@ -10,90 +10,68 @@
 
 // Custom command to mock authenticated state
 Cypress.Commands.add('mockAuthentication', () => {
-  // Mock API responses for authenticated user
-  cy.intercept('POST', '**/get-user-roles', {
+  // Mock API responses for authenticated user with correct HTTP methods and formats
+  cy.intercept('GET', '**/get-user-roles', {
     statusCode: 200,
     body: {
-      items: [
-        { sectionid: '1', sectionname: 'Cubs', rolename: 'Leader' },
-        { sectionid: '2', sectionname: 'Scouts', rolename: 'Leader' }
-      ]
+      "0": {
+        "sectionid": "49097",
+        "sectionname": "Thursday Beavers",
+        "section": "beavers",
+        "isDefault": "1",
+        "permissions": { "badge": 20, "member": 20, "events": 20 }
+      },
+      "1": {
+        "sectionid": "11113", 
+        "sectionname": "Wednesday Beavers",
+        "section": "beavers",
+        "isDefault": "0",
+        "permissions": { "badge": 20, "member": 20, "events": 20 }
+      }
     }
   }).as('getUserRoles')
 
-  cy.intercept('POST', '**/get-sections', {
+  cy.intercept('GET', '**/get-terms**', {
     statusCode: 200,
     body: {
-      items: [
-        { sectionid: '1', sectionname: '1st Test Cubs' },
-        { sectionid: '2', sectionname: '1st Test Scouts' }
+      '49097': [
+        { termid: '1516164', name: 'Autumn 2024', enddate: '2024-12-15' }
       ]
     }
-  }).as('getSections')
+  }).as('getTerms')
 
-  cy.intercept('POST', '**/get-events', {
+  cy.intercept('GET', '**/get-events**', {
     statusCode: 200,
-    body: {
-      items: [
-        {
-          eventid: '1',
-          name: 'Test Camp',
-          startdate: '2024-06-01',
-          sectionname: '1st Test Cubs',
-          yes: 15,
-          no: 3,
-          yes_members: 12,
-          yes_yls: 2,
-          yes_leaders: 1
-        }
-      ]
-    }
+    body: [
+      { eventid: '813460', name: 'Test Event 1', date: '2024-12-01' }
+    ]
   }).as('getEvents')
 
-  cy.intercept('POST', '**/get-attendees', {
-    statusCode: 200,
-    body: {
-      items: [
-        {
-          scoutid: '1',
-          firstname: 'John',
-          lastname: 'Smith',
-          attending: 'Yes',
-          sectionname: '1st Test Cubs'
-        },
-        {
-          scoutid: '2',
-          firstname: 'Jane',
-          lastname: 'Doe',
-          attending: 'No',
-          sectionname: '1st Test Cubs'
-        }
-      ]
-    }
-  }).as('getAttendees')
-
-  // Set authentication token
+  // Set authentication token with correct format
   cy.window().then((win) => {
     win.sessionStorage.setItem('access_token', 'mock-valid-token')
+    win.sessionStorage.setItem('token_type', 'Bearer')
   })
 })
 
 // Command to wait for app to load after authentication
 Cypress.Commands.add('waitForAuthenticatedApp', () => {
+  // Wait for authentication to complete first
+  cy.wait('@getUserRoles')
+  
+  // Wait for the body to NOT have login-screen class (authenticated state)
+  cy.get('body', { timeout: 10000 }).should('not.have.class', 'login-screen')
+  
   // Wait for the sidebar toggle to appear (indicates main app is loaded)
   cy.get('#sidebarToggle', { timeout: 10000 }).should('be.visible')
   
   // Dismiss any error toasts that might appear
   cy.dismissErrorToasts()
   
-  // Give app time to initialize (without waiting for specific API calls)
+  // Give app time to initialize
   cy.wait(1000)
   
-  // Optionally wait for user roles if the app actually makes that call
-  cy.get('body').then(() => {
-    // App is ready for testing
-    cy.log('Authenticated app interface loaded')
-  })
+  cy.log('Authenticated app interface loaded')
 })
 
 // Command to dismiss error toasts

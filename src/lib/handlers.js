@@ -225,7 +225,7 @@ export async function handleCampGroupsView(selectedSections, selectedEvents) {
             for (const eventId of selectedEvents) {
                 console.log(`Fetching attendance for section ${sectionId}, term ${termId}, event ${eventId}`);
                 try {
-                    const attendance = await getEventAttendance(sectionId, termId, eventId);
+                    const attendance = await getEventAttendance(sectionId, eventId, termId);
                     console.log(`Retrieved ${attendance.length} attendance records`);
                     
                     // Filter for attending members only

@@ -252,13 +252,15 @@ export async function getUserRoles() {
         const data = await handleAPIResponseWithRateLimit(response, 'getUserRoles');
 
         // Handle case where data might be null/undefined
-        if (!Array.isArray(data)) {
+        if (!data || typeof data !== 'object') {
             return [];
         }
 
-        // Filter out adults section and extract only section details
-        const sections = data
-            .filter(item => item.section !== 'adults') // Exclude adults section
+        // The API returns an object with numeric keys, convert to array
+        const sections = Object.keys(data)
+            .filter(key => !isNaN(key)) // Only numeric keys (ignore _rateLimitInfo, etc.)
+            .map(key => data[key])
+            .filter(item => item && typeof item === 'object') // Valid section objects
             .map(item => ({
                 sectionid: item.sectionid,
                 sectionname: item.sectionname,
@@ -311,7 +313,7 @@ export async function getEvents(sectionId, termId) {
 // termId: The ID of the term.
 // Returns an object, typically { items: [...] }, where items is an array of attendance records.
 // Expected attendance record structure: { memberid: string, firstname: string, lastname: string, attended: boolean, ... }
-export async function getEventAttendance(sectionId, termId, eventId) {
+export async function getEventAttendance(sectionId, eventId, termId) {
     try {
         const token = getToken();
         if (!token) {
@@ -328,15 +330,10 @@ export async function getEventAttendance(sectionId, termId, eventId) {
         });
 
         const data = await handleAPIResponseWithRateLimit(response, 'getEventAttendance');
-
-        if (!data || data.length === 0) {
-            console.warn(`No attendance data returned for section ${sectionId}, term ${termId}, and event ${eventId}`);
-        }
-
         return data || [];
-        
+
     } catch (error) {
-        console.error(`Error fetching event attendance for section ${sectionId}, term ${termId}, and event ${eventId}:`, error);
+        console.error(`Error fetching event attendance for event ${eventId}:`, error);
         throw error;
     }
 }

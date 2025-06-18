@@ -377,6 +377,7 @@ export function updateSidebarToggleVisibility() {
     const sidebarToggle = document.getElementById('sidebarToggle');
     if (sidebarToggle) {
         const isLoginScreen = document.body.classList.contains('login-screen');
+        console.log('Updating sidebar toggle visibility:', { isLoginScreen, element: sidebarToggle });
         sidebarToggle.style.display = isLoginScreen ? 'none' : 'block';
     }
 }
