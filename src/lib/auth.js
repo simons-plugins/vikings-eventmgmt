@@ -82,21 +82,30 @@ export function isAuthenticated() {
 export function showLoginScreen() {
     console.log('Showing login screen');
 
-    // Update the redirect URI to point to the backend callback
-    const redirectUri = 'https://vikings-osm-event-manager.onrender.com/oauth/callback';
+    // Get environment variables
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
+    const isDevelopment = import.meta.env.VITE_NODE_ENV === 'development' || 
+                         import.meta.env.DEV ||
+                         window.location.hostname === 'localhost';
+
+    // Build OAuth redirect URI with environment parameter
+    const baseRedirectUri = `${apiUrl}/oauth/callback`;
+    const redirectUri = isDevelopment 
+        ? `${baseRedirectUri}?env=dev`
+        : baseRedirectUri;
 
     const existingLoginBtn = document.getElementById('osm-login-btn');
     if (existingLoginBtn) {
         const mainContainer = document.querySelector('main.container') || document.querySelector('main');
         if (mainContainer) mainContainer.style.display = 'block';
-        existingLoginBtn.onclick = () => {
+        existingLoginBtn.addEventListener('click', () => {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
             window.location.href = authUrl;
-        };
+        });
         return;
     }
 
@@ -125,6 +134,7 @@ export function showLoginScreen() {
         </div>
     `;
 
+    // Update the click handler for the new login button
     const loginBtn = document.getElementById('osm-login-btn');
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
