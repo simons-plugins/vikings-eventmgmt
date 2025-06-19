@@ -5,7 +5,7 @@
 // and triggers UI updates to display this data based on user actions.
 
 // --- Imports ---
-import { getMostRecentTermId, getEvents, getEventAttendance } from './api.js';
+import { getMostRecentTermId, getEvents, getEventAttendance, enrichAttendeesWithCampGroups } from './api.js';
 import { showSpinner, hideSpinner, showError, renderEventsTable, showBlockedScreen } from '../ui.js'; // Added showBlockedScreen
 import { renderTabbedAttendanceView } from '../ui/attendance.js'; // Moved
 
@@ -159,6 +159,19 @@ export async function handleEventSelect(selectedEvents, currentSectionsData) {
         }
 
         // After processing all selected events:
+
+        // Extract unique section IDs from selected events for enrichment
+        const selectedSectionIds = [...new Set(selectedEvents.map(event => event.sectionid))];
+
+        if (allAttendees.length > 0 && selectedSectionIds.length > 0) {
+            console.log('Enriching attendees with camp group data...', { numAttendees: allAttendees.length, sections: selectedSectionIds });
+            // enrichAttendeesWithCampGroups might modify attendees in place or return a new array.
+            // Assuming it returns a new array or modifies in place, reassign if necessary.
+            // The function in api.js modifies in place and returns the same array.
+            await enrichAttendeesWithCampGroups(allAttendees, selectedSectionIds);
+            console.log('Attendees enriched:', allAttendees);
+        }
+
         if (allAttendees.length === 0) {
             // If no attendance data was found for any of the selected events, show an error.
             showError('No attendance data found for selected events. Some events might have had issues loading.');

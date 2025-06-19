@@ -301,44 +301,85 @@ function renderGroupedAttendanceTable(attendees) {
     groupedContent.innerHTML = htmlParts.join(''); // Inject the HTML.
 }
 
-// Renders the "Camp Groups" table, which is a simple list of unique attendees.
-// This view is primarily intended for easily copying names for camp group planning.
+// Renders the "Camp Groups" table with detailed information including sign-in/out data.
 function renderCampGroupsTable(attendees) {
     const campGroupsContent = document.getElementById('camp-groups-content');
-    if (!campGroupsContent) return;
-
-    if (attendees.length === 0) {
-        campGroupsContent.innerHTML = `<div class="text-center py-4"><i class="fas fa-info-circle text-muted" style="font-size:2rem;"></i><p class="text-muted mt-2">No attendees.</p></div>`;
+    if (!campGroupsContent) {
+        console.error('Camp groups content area not found');
         return;
     }
 
-    // Derive a list of unique attendees (by first and last name).
-    const uniqueAttendees = {};
-    attendees.forEach(attendee => {
-        const nameKey = `${attendee.firstname} ${attendee.lastname}`;
-        if (!uniqueAttendees[nameKey]) {
-            uniqueAttendees[nameKey] = {
-                firstname: attendee.firstname,
-                lastname: attendee.lastname,
-                sectionname: attendee.sectionname // Keep section name for context
-            };
-        }
-    });
-    const uniqueAttendeesList = Object.values(uniqueAttendees);
+    if (!attendees || attendees.length === 0) {
+        campGroupsContent.innerHTML = `<div class="text-center py-4"><i class="fas fa-info-circle text-muted" style="font-size:2rem;"></i><p class="text-muted mt-2">No attendees to display in Camp Groups.</p></div>`;
+        return;
+    }
 
-    // Start building HTML for the list.
-    let html = `<div class="d-flex justify-content-between align-items-center mb-3 px-3 pt-3"><h6 class="mb-0"><i class="fas fa-campground me-2"></i>Camp Groups</h6><small class="text-muted">${uniqueAttendeesList.length} attendee(s)</small></div><div class="table-responsive"><table class="table table-striped table-sm"><thead class="thead-light"><tr><th>Name</th></tr></thead><tbody>`;
-    // Sort unique attendees by last name, then first name.
-    uniqueAttendeesList.sort((a,b) => {
-        const lnc = a.lastname.localeCompare(b.lastname);
-        if (lnc !== 0) return lnc;
-        return a.firstname.localeCompare(b.firstname);
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3 px-3 pt-3">
+            <h6 class="mb-0"><i class="fas fa-campground me-2"></i>Camp Group Details</h6>
+            <small class="text-muted">${attendees.length} attendee(s)</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Attendee Name</th>
+                        <th>Camp Group</th>
+                        <th>Signed In By</th>
+                        <th>Signed In When</th>
+                        <th>Signed Out By</th>
+                        <th>Signed Out When</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    // Sort attendees by CampGroup, then by lastname, then by firstname for consistent display
+    attendees.sort((a, b) => {
+        const campGroupA = a.campGroup || 'Unassigned';
+        const campGroupB = b.campGroup || 'Unassigned';
+        if (campGroupA.localeCompare(campGroupB) !== 0) {
+            return campGroupA.localeCompare(campGroupB);
+        }
+        // Fallback to sorting by lastname if campGroup is the same or unassigned
+        const lastnameA = a.lastname || '';
+        const lastnameB = b.lastname || '';
+        if (lastnameA.localeCompare(lastnameB) !== 0) {
+            return lastnameA.localeCompare(lastnameB);
+        }
+        // Fallback to sorting by firstname if lastname is also the same
+        const firstnameA = a.firstname || '';
+        const firstnameB = b.firstname || '';
+        return firstnameA.localeCompare(firstnameB);
     });
-    uniqueAttendeesList.forEach(attendee => {
-        html += `<tr><td><strong>${attendee.firstname} ${attendee.lastname}</strong><br><small class="text-muted">${attendee.sectionname||'-'}</small></td></tr>`;
+
+    attendees.forEach(attendee => {
+        const attendeeName = `${attendee.firstname || ''} ${attendee.lastname || ''}`.trim();
+        const campGroup = attendee.campGroup || '-';
+        const signedInBy = attendee.SignedInBy || '-';
+        const signedInWhen = attendee.SignedInWhen ? new Date(attendee.SignedInWhen).toLocaleString() : '-';
+        const signedOutBy = attendee.SignedOutBy || '-';
+        const signedOutWhen = attendee.SignedOutWhen ? new Date(attendee.SignedOutWhen).toLocaleString() : '-';
+
+        html += `
+            <tr>
+                <td>${attendeeName}</td>
+                <td>${campGroup}</td>
+                <td>${signedInBy}</td>
+                <td>${signedInWhen}</td>
+                <td>${signedOutBy}</td>
+                <td>${signedOutWhen}</td>
+            </tr>
+        `;
     });
-    html += `</tbody></table></div><div class="px-3 pb-3"><small class="text-muted"><i class="fas fa-info-circle me-1"></i>Simple list for camp groups.</small></div>`;
-    campGroupsContent.innerHTML = html; // Inject the HTML.
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <div class="px-3 pb-3"><small class="text-muted"><i class="fas fa-info-circle me-1"></i>Detailed camp group assignments and sign-in/out status.</small></div>
+    `;
+    campGroupsContent.innerHTML = html;
 }
 
 // Main function to render the tabbed interface for attendance views.
