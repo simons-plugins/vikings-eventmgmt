@@ -29,12 +29,12 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           start: npm run dev
-          wait-on: 'http://localhost:3000'
+          wait-on: 'https://localhost:3000'
           wait-on-timeout: 120
           browser: chrome
         env:  
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          CYPRESS_baseUrl: http://localhost:3000
+          CYPRESS_baseUrl: https://localhost:3000
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_NODE_ENV: ${{ secrets.VITE_NODE_ENV }}
           NODE_ENV: production
