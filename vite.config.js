@@ -11,10 +11,6 @@ export default defineConfig({
       org: "starmerclarkcom",
       project: "vikings-eventmgmt",
     }),
-    sentryVitePlugin({
-      org: "starmerclarkcom",
-      project: "vikings-eventmgmt",
-    }),
   ],
 
   // Root directory (where index.html is)
