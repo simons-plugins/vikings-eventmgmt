@@ -28,15 +28,15 @@ jobs:
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          start: npm start
+          start: npm run dev
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
           browser: chrome
         env:  
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           CYPRESS_baseUrl: http://localhost:3000
-          VITE_API_URL: https://vikings-osm-event-manager.onrender.com
-          VITE_NODE_ENV: production
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_NODE_ENV: ${{ secrets.VITE_NODE_ENV }}
           NODE_ENV: production
 
       # Optionally, deploy to Render or another host
