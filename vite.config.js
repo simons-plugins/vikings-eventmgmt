@@ -7,15 +7,15 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 export default defineConfig({
   plugins: [
     basicSsl(),
-    sentryVitePlugin({
-      org: "starmerclarkcom",
-      project: "vikings-eventmgmt",
-    }),
-    sentryVitePlugin({
-      org: "starmerclarkcom",
-      project: "vikings-eventmgmt",
-    }),
-  ],
+    // Only include Sentry plugin in production build
+    process.env.NODE_ENV === "production" &&
+      sentryVitePlugin({
+        org: "starmerclarkcom",
+        project: "vikings-eventmgmt",
+        // Sentry authentication token
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+      }),
+  ].filter(Boolean), // Filter out false values (when not in production)
 
   // Root directory (where index.html is)
   root: "src",
@@ -42,6 +42,12 @@ export default defineConfig({
     open: true, // Auto-open browser
     // Enable basic HTTPS (Vite will generate self-signed cert)
     https: true,
+    proxy: {
+      "/api": {
+        target: "http://localhost:5001",
+        changeOrigin: true,
+      },
+    },
   },
 
   // Preview server (for testing production build)

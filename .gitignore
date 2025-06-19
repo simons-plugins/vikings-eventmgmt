@@ -70,3 +70,6 @@ Thumbs.db
 .env.sentry-build-plugin
 sentry.properties
 .env.sentry
+
+# Video files
+*.mp4
