@@ -35,6 +35,9 @@ jobs:
         env:  
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           CYPRESS_baseUrl: http://localhost:3000
+          VITE_API_URL: https://vikings-osm-event-manager.onrender.com
+          VITE_NODE_ENV: production
+          NODE_ENV: production
 
       # Optionally, deploy to Render or another host
       # (see Render docs for deployment via GitHub Actions)
