@@ -1,77 +1,35 @@
-// Test Setup - Global configuration for all tests
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
+
+// Global configuration for all tests
 
 // Mock console methods to reduce noise in tests
 global.console = {
   ...console,
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
+  log: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
 };
 
 // Mock localStorage
+const storage = {};
 const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
+  getItem: vi.fn((key) => storage[key] || null),
+  setItem: vi.fn((key, value) => { storage[key] = value; }),
+  removeItem: vi.fn((key) => { delete storage[key]; }),
+  clear: vi.fn(() => { Object.keys(storage).forEach(key => delete storage[key]); })
 };
-global.localStorage = localStorageMock;
 
-// Mock sessionStorage
-const sessionStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock
+});
+
+// Mock fetch
+global.fetch = vi.fn();
+
+// Mock window.location
+delete window.location;
+window.location = {
+  href: '',
+  assign: vi.fn(),
+  reload: vi.fn()
 };
-global.sessionStorage = sessionStorageMock;
-
-// Mock fetch globally
-global.fetch = jest.fn();
-
-// Mock CSS properties
-Object.defineProperty(window, 'getComputedStyle', {
-  value: () => ({
-    getPropertyValue: () => '',
-  }),
-});
-
-// Mock window.innerWidth for mobile/desktop testing
-Object.defineProperty(window, 'innerWidth', {
-  writable: true,
-  configurable: true,
-  value: 1024,
-});
-
-// Suppress JSDOM warnings about navigation
-const originalConsoleError = console.error;
-beforeAll(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('Not implemented: navigation') ||
-       args[0].includes('Error: Not implemented'))
-    ) {
-      return; // Suppress JSDOM warnings
-    }
-    originalConsoleError.call(console, ...args);
-  };
-});
-
-afterAll(() => {
-  console.error = originalConsoleError;
-});
-
-// Clean up after each test
-afterEach(() => {
-  jest.clearAllMocks();
-  localStorage.clear();
-  if (sessionStorage && typeof sessionStorage.clear === 'function') {
-    sessionStorage.clear();
-  }
-  document.body.innerHTML = '';
-  
-  // Reset window.innerWidth
-  window.innerWidth = 1024;
-});
