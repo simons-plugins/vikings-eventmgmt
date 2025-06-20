@@ -18,8 +18,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve": "vite preview --port 3000",
-    "test:e2e": "start-server-and-test dev https://localhost:3000 cypress:run",
-    "test:e2e:open": "start-server-and-test dev https://localhost:3000 cypress:open"
+    "test:e2e": "start-server-and-test dev http://localhost:3000 cypress:run",
+    "test:e2e:open": "start-server-and-test dev http://localhost:3000 cypress:open"
   },
   "repository": {
     "type": "git",

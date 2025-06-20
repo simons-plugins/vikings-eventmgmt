@@ -25,3 +25,6 @@ jobs:
       - name: Run unit tests
         run: npm run test:run
 
+# Fix for Cypress HTTPS certificate issue in CI
+# Use HTTP instead of HTTPS for local development server in CI environment
+

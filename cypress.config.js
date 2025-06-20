@@ -3,7 +3,7 @@ import { defineConfig } from 'cypress'
 export default defineConfig({
   projectId: 'qqogix',
   e2e: {
-    baseUrl: 'https://localhost:3000',
+    baseUrl: process.env.CI ? 'http://localhost:3000' : 'https://localhost:3000',
     supportFile: false,
     video: true,
     screenshotOnRunFailure: true,
