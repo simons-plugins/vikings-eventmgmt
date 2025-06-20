@@ -4,6 +4,9 @@ import { defineConfig } from "vite";
 import { resolve } from "path";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 
+// Check if running in CI environment and adjust HTTPS accordingly
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+
 export default defineConfig({
   plugins: [
     basicSsl(),
@@ -41,7 +44,7 @@ export default defineConfig({
     port: 3000,
     open: true, // Auto-open browser
     // Enable basic HTTPS (Vite will generate self-signed cert)
-    https: true,
+    https: !isCI,
     proxy: {
       "/api": {
         target: "http://localhost:5001",

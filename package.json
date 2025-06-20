@@ -15,6 +15,7 @@
     "cypress:run:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress run",
     "cypress:open:prod": "CYPRESS_BASE_URL=https://vikings-eventmgmt.onrender.com cypress open",
     "dev": "vite",
+    "dev:ci": "vite --host --https=false",
     "build": "vite build",
     "preview": "vite preview",
     "serve": "vite preview --port 3000",
