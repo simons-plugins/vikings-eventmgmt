@@ -82,11 +82,12 @@ export function isAuthenticated() {
 export function showLoginScreen() {
     console.log('Showing login screen');
 
-    // Get environment variables
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
-    const isDevelopment = import.meta.env.VITE_NODE_ENV === 'development' || 
-                         import.meta.env.DEV ||
-                         window.location.hostname === 'localhost';
+    // Get environment variables with safe fallbacks for test environments
+    const env = import.meta.env || {};
+    const apiUrl = env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
+    const isDevelopment = env.VITE_NODE_ENV === 'development' || 
+                         env.DEV ||
+                         (typeof window !== 'undefined' && window.location.hostname === 'localhost');
     
     // Add env=dev parameter only for development (so backend redirects to localhost)
     // Production gets no environment parameter (so backend redirects to production domain)
@@ -96,12 +97,12 @@ export function showLoginScreen() {
     
     // Debug environment configuration
     console.log('Environment Debug:', {
-        NODE_ENV: import.meta.env.NODE_ENV,
-        VITE_NODE_ENV: import.meta.env.VITE_NODE_ENV,
-        VITE_API_URL: import.meta.env.VITE_API_URL,
+        NODE_ENV: env.NODE_ENV,
+        VITE_NODE_ENV: env.VITE_NODE_ENV,
+        VITE_API_URL: env.VITE_API_URL,
         isDevelopment,
         finalApiUrl,
-        currentDomain: window.location.origin
+        currentDomain: typeof window !== 'undefined' ? window.location.origin : 'test-environment'
     });
 
     // Build OAuth redirect URI with environment parameter
