@@ -47,5 +47,5 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           CYPRESS_baseUrl: http://localhost:3000
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_NODE_ENV: ${{ secrets.VITE_NODE_ENV }}
-          NODE_ENV: production
+          VITE_NODE_ENV: development
+          NODE_ENV: development
