@@ -232,8 +232,9 @@ export function addLogoutButton() {
 
 // Ensure production uses production API
 const getAPIURL = () => {
-    const baseURL = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
-    const isProduction = import.meta.env.VITE_NODE_ENV === 'production';
+    const env = import.meta.env || {};
+    const baseURL = env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
+    const isProduction = env.VITE_NODE_ENV === 'production';
     
     // Remove dev parameter in production
     if (isProduction && baseURL.includes('env=dev')) {
@@ -246,11 +247,12 @@ const getAPIURL = () => {
 export const API_URL = getAPIURL();
 
 // Debug OAuth configuration in production
-if (import.meta.env.VITE_NODE_ENV === 'production') {
+const env = import.meta.env || {};
+if (env.VITE_NODE_ENV === 'production') {
     console.log('OAuth Config:', {
-        clientId: import.meta.env.VITE_OSM_CLIENT_ID ? 'SET' : 'MISSING',
-        redirectUri: import.meta.env.VITE_OSM_REDIRECT_URI,
-        currentDomain: window.location.origin
+        clientId: env.VITE_OSM_CLIENT_ID ? 'SET' : 'MISSING',
+        redirectUri: env.VITE_OSM_REDIRECT_URI,
+        currentDomain: typeof window !== 'undefined' ? window.location.origin : 'unknown'
     });
 }
 
