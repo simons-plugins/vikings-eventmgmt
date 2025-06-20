@@ -1,4 +1,5 @@
 // src/lib/auth.js
+// src/lib/auth.js
 // This module is responsible for all authentication-related logic.
 // It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM),
 // and controls UI changes based on the user's authentication state.
@@ -89,11 +90,9 @@ export function showLoginScreen() {
                          env.DEV ||
                          (typeof window !== 'undefined' && window.location.hostname === 'localhost');
     
-    // Add env=dev parameter only for development (so backend redirects to localhost)
-    // Production gets no environment parameter (so backend redirects to production domain)
-    const finalApiUrl = isDevelopment 
-        ? (apiUrl.includes('?') ? `${apiUrl}&env=dev` : `${apiUrl}?env=dev`)
-        : apiUrl;
+    // Add state parameter for development vs production (so backend uses correct redirect)
+    // Production gets state=prod, development gets state=dev
+    const stateParam = isDevelopment ? 'dev' : 'prod';
     
     // Debug environment configuration
     console.log('Environment Debug:', {
@@ -101,15 +100,12 @@ export function showLoginScreen() {
         VITE_NODE_ENV: env.VITE_NODE_ENV,
         VITE_API_URL: env.VITE_API_URL,
         isDevelopment,
-        finalApiUrl,
+        stateParam,
         currentDomain: typeof window !== 'undefined' ? window.location.origin : 'test-environment'
     });
 
-    // Build OAuth redirect URI with environment parameter
-    const baseRedirectUri = `${apiUrl}/oauth/callback`;
-    const redirectUri = isDevelopment 
-        ? `${baseRedirectUri}?env=dev`
-        : baseRedirectUri;
+    // Build OAuth redirect URI - backend handles redirect based on state parameter
+    const redirectUri = `${apiUrl}/oauth/callback`;
 
     const existingLoginBtn = document.getElementById('osm-login-btn');
     if (existingLoginBtn) {
@@ -119,6 +115,7 @@ export function showLoginScreen() {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `state=${stateParam}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
             window.location.href = authUrl;
@@ -158,6 +155,7 @@ export function showLoginScreen() {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `state=${stateParam}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
             window.location.href = authUrl;
@@ -264,6 +262,10 @@ console.log('Environment Debug:', {
     currentURL: window.location.href,
     isProduction: import.meta.env.VITE_NODE_ENV === 'production'
 });
+
+// IMPORTANT: Update OAuth to use state parameter instead of env parameter
+// Development: state=dev, Production: state=prod
+// Backend will handle redirect URLs based on state parameter
 
 // Update all API calls to use apiUrlWithEnv instead of apiUrl
 // This ensures the backend knows whether the request is from prod or dev environment
