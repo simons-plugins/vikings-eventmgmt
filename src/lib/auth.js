@@ -83,13 +83,16 @@ export function showLoginScreen() {
     console.log('Showing login screen');
 
     // Get environment variables
-    const baseApiUrl = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
     const isDevelopment = import.meta.env.VITE_NODE_ENV === 'development' || 
                          import.meta.env.DEV ||
                          window.location.hostname === 'localhost';
     
-    // Clean API URL - remove dev parameters in production
-    const apiUrl = isDevelopment ? baseApiUrl : baseApiUrl.replace(/[?&]env=dev/, '');
+    // Add env=dev parameter only for development (so backend redirects to localhost)
+    // Production gets no environment parameter (so backend redirects to production domain)
+    const finalApiUrl = isDevelopment 
+        ? (apiUrl.includes('?') ? `${apiUrl}&env=dev` : `${apiUrl}?env=dev`)
+        : apiUrl;
     
     // Debug environment configuration
     console.log('Environment Debug:', {
@@ -97,8 +100,8 @@ export function showLoginScreen() {
         VITE_NODE_ENV: import.meta.env.VITE_NODE_ENV,
         VITE_API_URL: import.meta.env.VITE_API_URL,
         isDevelopment,
-        cleanedApiUrl: apiUrl,
-        currentURL: window.location.href
+        finalApiUrl,
+        currentDomain: window.location.origin
     });
 
     // Build OAuth redirect URI with environment parameter
@@ -258,3 +261,6 @@ console.log('Environment Debug:', {
     currentURL: window.location.href,
     isProduction: import.meta.env.VITE_NODE_ENV === 'production'
 });
+
+// Update all API calls to use apiUrlWithEnv instead of apiUrl
+// This ensures the backend knows whether the request is from prod or dev environment
