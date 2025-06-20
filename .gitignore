@@ -74,3 +74,4 @@ sentry.properties
 # Video files (Cypress recordings)
 *.mp4
 *.png
+cypress/videos/
