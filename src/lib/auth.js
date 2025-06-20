@@ -83,10 +83,23 @@ export function showLoginScreen() {
     console.log('Showing login screen');
 
     // Get environment variables
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
+    const baseApiUrl = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
     const isDevelopment = import.meta.env.VITE_NODE_ENV === 'development' || 
                          import.meta.env.DEV ||
                          window.location.hostname === 'localhost';
+    
+    // Clean API URL - remove dev parameters in production
+    const apiUrl = isDevelopment ? baseApiUrl : baseApiUrl.replace(/[?&]env=dev/, '');
+    
+    // Debug environment configuration
+    console.log('Environment Debug:', {
+        NODE_ENV: import.meta.env.NODE_ENV,
+        VITE_NODE_ENV: import.meta.env.VITE_NODE_ENV,
+        VITE_API_URL: import.meta.env.VITE_API_URL,
+        isDevelopment,
+        cleanedApiUrl: apiUrl,
+        currentURL: window.location.href
+    });
 
     // Build OAuth redirect URI with environment parameter
     const baseRedirectUri = `${apiUrl}/oauth/callback`;
@@ -212,3 +225,36 @@ export function addLogoutButton() {
         sidebar.appendChild(logoutBtn);
     }
 }
+
+// Ensure production uses production API
+const getAPIURL = () => {
+    const baseURL = import.meta.env.VITE_API_URL || 'https://vikings-osm-event-manager.onrender.com';
+    const isProduction = import.meta.env.VITE_NODE_ENV === 'production';
+    
+    // Remove dev parameter in production
+    if (isProduction && baseURL.includes('env=dev')) {
+        return baseURL.replace(/[?&]env=dev/, '');
+    }
+    
+    return baseURL;
+};
+
+export const API_URL = getAPIURL();
+
+// Debug OAuth configuration in production
+if (import.meta.env.VITE_NODE_ENV === 'production') {
+    console.log('OAuth Config:', {
+        clientId: import.meta.env.VITE_OSM_CLIENT_ID ? 'SET' : 'MISSING',
+        redirectUri: import.meta.env.VITE_OSM_REDIRECT_URI,
+        currentDomain: window.location.origin
+    });
+}
+
+// Debug environment configuration
+console.log('Environment Debug:', {
+    NODE_ENV: import.meta.env.NODE_ENV,
+    VITE_NODE_ENV: import.meta.env.VITE_NODE_ENV,
+    VITE_API_URL: import.meta.env.VITE_API_URL,
+    currentURL: window.location.href,
+    isProduction: import.meta.env.VITE_NODE_ENV === 'production'
+});
