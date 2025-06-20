@@ -36,24 +36,16 @@ jobs:
           echo "=== Cypress Debug Info ==="
           npx cypress version
           npx cypress verify
-      
-      - name: Cypress run
-        # Uses the official Cypress GitHub action https://github.com/cypress-io/github-action
+      - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          # Don't install again since we already did npm ci
-          install: false
-          # Starts web server for E2E tests
-          start: npm start
-          wait-on: 'http://localhost:3000'
-          # Records to Cypress Cloud 
-          record: true
-          parallel: false # Disable parallel for debugging
-        env:
-          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
-          # in GitHub repo → Settings → Secrets → Actions
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-          # Creating a token https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Test against locally started server
-          CYPRESS_BASE_URL: http://localhost:3000
+          start: npm run dev
+          wait-on: 'https://localhost:3000'
+          wait-on-timeout: 120
+          browser: chrome
+        env:  
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          CYPRESS_baseUrl: https://localhost:3000
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_NODE_ENV: ${{ secrets.VITE_NODE_ENV }}
+          NODE_ENV: production
