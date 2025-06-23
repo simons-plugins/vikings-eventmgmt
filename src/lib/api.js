@@ -354,14 +354,12 @@ export async function getFlexiRecords(sectionId, archived = 'n') {
             return { identifier: null, label: null, items: [] };
         }
 
-        const response = await fetch(`${BACKEND_URL}/get-flexi-records`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                access_token: token,
-                sectionid: sectionId,
-                archived: archived
-            })
+        const response = await fetch(`${BACKEND_URL}/get-flexi-records?sectionid=${sectionId}&archived=${archived}`, {
+            method: 'GET',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
         });
 
         const data = await handleAPIResponseWithRateLimit(response, 'getFlexiRecords');
@@ -395,9 +393,11 @@ export async function getSingleFlexiRecord(flexirecordid, sectionid, termid) {
         }
 
         const response = await fetch(`${BACKEND_URL}/get-single-flexi-record?flexirecordid=${flexirecordid}&sectionid=${sectionid}&termid=${termid}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ access_token: token })
+            method: 'GET',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
         });
         
         const data = await handleAPIResponseWithRateLimit(response, 'getSingleFlexiRecord');
@@ -643,3 +643,132 @@ export async function getSectionConfig(sectionId) {
         throw error;
     }
 }
+
+// Fetches contact details for a specific member (scout).
+// sectionid: The ID of the section.
+// scoutid: The ID of the member (scout).
+// Returns contact details object with member information.
+export async function getContactDetails(sectionId, scoutId) {
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return null;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/get-contact-details?sectionid=${sectionId}&scoutid=${scoutId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await handleAPIResponseWithRateLimit(response, 'getContactDetails');
+        return data || null;
+
+    } catch (error) {
+        console.error(`Error fetching contact details for scout ${scoutId}:`, error);
+        throw error;
+    }
+}
+
+// Fetches a list of members for a specific section.
+// sectionid: The ID of the section.
+// Returns an object with items array containing member summary data.
+export async function getListOfMembers(sectionId) {
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return { identifier: null, label: null, items: [] };
+        }
+
+        const response = await fetch(`${BACKEND_URL}/get-list-of-members?sectionid=${sectionId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await handleAPIResponseWithRateLimit(response, 'getListOfMembers');
+        return data || { identifier: null, label: null, items: [] };
+
+    } catch (error) {
+        console.error(`Error fetching members list for section ${sectionId}:`, error);
+        throw error;
+    }
+}
+
+// Updates a specific field (column) for a member within a flexi-record.
+// sectionid: The ID of the section.
+// scoutid: The ID of the member.
+// flexirecordid: The ID of the flexi-record table.
+// columnid: The ID of the column within the flexi-record to update.
+// value: The new value for the field.
+export async function updateFlexiRecord(sectionId, scoutId, flexiRecordId, columnId, value) {
+    try {
+        checkIfBlocked();
+        
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return null;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/update-flexi-record`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                sectionid: sectionId,
+                scoutid: scoutId,
+                flexirecordid: flexiRecordId,
+                columnid: columnId,
+                value: value
+            })
+        });
+
+        const data = await handleAPIResponseWithRateLimit(response, 'updateFlexiRecord');
+        return data || null;
+
+    } catch (error) {
+        console.error('Error updating flexi record:', error);
+        throw error;
+    }
+}
+
+// Missing function from API documentation - add OAuth debug helper
+export async function getOAuthDebug(state = null) {
+    try {
+        const url = state ? `${BACKEND_URL}/oauth/debug?state=${state}` : `${BACKEND_URL}/oauth/debug`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        } else {
+            console.error('OAuth debug request failed:', response.status);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching OAuth debug info:', error);
+        return null;
+    }
+}
+
+// TODO: API INCONSISTENCIES FOUND - Need to fix these to match backend documentation:
+//
+// 1. getFlexiRecords() - Currently uses POST, but documentation says GET with query params
+// 2. getSingleFlexiRecord() - Currently uses POST, but documentation says GET with query params  
+// 3. Rate limiting - Missing /rate-limit-status endpoint implementation
+// 4. OAuth debug - Missing /oauth/debug endpoint for debugging
+//
+// See: api backend docs/api/osm_proxy.md for correct API specifications
