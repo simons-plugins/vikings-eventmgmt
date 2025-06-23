@@ -92,20 +92,38 @@ export function showLoginScreen() {
     
     // Add state parameter for development vs production (so backend uses correct redirect)
     // Production gets state=prod, development gets state=dev
-    const stateParam = isDevelopment ? 'dev' : 'prod';
+    const forceProduction = window.location.hostname !== 'localhost';
+    const stateParam = forceProduction ? 'prod' : 'dev';
     
-    // Debug environment configuration
-    console.log('Environment Debug:', {
-        NODE_ENV: env.NODE_ENV,
-        VITE_NODE_ENV: env.VITE_NODE_ENV,
-        VITE_API_URL: env.VITE_API_URL,
+    console.log('🧪 TEMPORARY: Forced state detection:', { forceProduction, stateParam });
+
+    // DEBUG: Enhanced logging for production troubleshooting
+    console.log('🔍 OAuth Debug Info:', {
+        currentDomain: typeof window !== 'undefined' ? window.location.origin : 'unknown',
+        hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
         isDevelopment,
         stateParam,
-        currentDomain: typeof window !== 'undefined' ? window.location.origin : 'test-environment'
+        apiUrl,
+        env: {
+            VITE_NODE_ENV: env.VITE_NODE_ENV,
+            DEV: env.DEV
+        }
     });
-
+    
     // Build OAuth redirect URI - backend handles redirect based on state parameter
     const redirectUri = `${apiUrl}/oauth/callback`;
+    
+    // Enhanced OAuth URL logging
+    const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
+        `client_id=${clientId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `state=${stateParam}&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `response_type=code`;
+    
+    console.log('🔗 Generated OAuth URL:', authUrl);
+    console.log('📍 Redirect URI sent to OSM:', redirectUri);
+    console.log('🏷️ State parameter:', stateParam);
 
     const existingLoginBtn = document.getElementById('osm-login-btn');
     if (existingLoginBtn) {
