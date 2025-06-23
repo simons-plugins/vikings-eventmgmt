@@ -33,6 +33,7 @@ server.crt
 node_modules/
 
 # Build outputs
+dist/
 build/
 
 # Logs
@@ -75,3 +76,4 @@ sentry.properties
 *.mp4
 cypress/videos/
 *.png
+cypress/screenshots/

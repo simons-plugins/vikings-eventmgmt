@@ -1,9 +1,5 @@
 // src/lib/auth.js
 // This module is responsible for all authentication-related logic.
-// It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM)        loginBtn.addEventListener('click', () => {
-
-// src/lib/auth.js
-// This module is responsible for all authentication-related logic.
 // It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM),
 // and controls UI changes based on the user's authentication state.
 
@@ -150,10 +146,9 @@ export function showLoginScreen() {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                `state=${finalStateParam}&` +
+                `state=${stateParam}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
-            console.log('🔗 FORCED OAuth URL:', authUrl);
             window.location.href = authUrl;
         });
         return;
@@ -309,3 +304,6 @@ console.log('Environment Debug:', {
 // CACHE BUSTING v3.0 - Timestamp: 2025-01-23-18:00
 // If you see this exact timestamp in production, the cache has been refreshed
 console.log('🚀 Auth.js loaded - Version 3.0 - TIMESTAMP: 2025-01-23-18:00');
+
+// Clean up: Remove debug logging now that OAuth flow is working
+// Production-ready version without excessive console logs
