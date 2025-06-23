@@ -1,6 +1,17 @@
 // src/lib/auth.js
 // src/lib/auth.js
 // This module is responsible for all authentication-related logic.
+// It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM)        loginBtn.addEventListener('click', () => {
+            const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
+                `client_id=${clientId}&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `state=${finalStateParam}&` +
+                `scope=${encodeURIComponent(scope)}&` +
+                `response_type=code`;
+            console.log('🔗 FORCED OAuth URL:', authUrl);
+            window.location.href = authUrl;
+// src/lib/auth.js
+// This module is responsible for all authentication-related logic.
 // It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM),
 // and controls UI changes based on the user's authentication state.
 
@@ -110,8 +121,25 @@ export function showLoginScreen() {
         }
     });
     
+    // AGGRESSIVE FIX: Force correct OAuth URL generation
+    // Override any cached or incorrect redirect URI
+    const CORRECT_BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+    const redirectUri = `${CORRECT_BACKEND_URL}/oauth/callback`;
+    
+    // Force correct state parameter based on hostname
+    const isProduction = window.location.hostname === 'vikings-eventmgmt.onrender.com';
+    const finalStateParam = isProduction ? 'prod' : 'dev';
+    
+    console.log('🔧 FORCED OAuth Config:', {
+        hostname: window.location.hostname,
+        isProduction,
+        stateParam,
+        redirectUri,
+        backendUrl: CORRECT_BACKEND_URL
+    });
+
     // Build OAuth redirect URI - backend handles OAuth callback and redirects back to frontend
-    const redirectUri = `${apiUrl}/oauth/callback`;
+    // const redirectUri = `${apiUrl}/oauth/callback`;
     
     // Enhanced OAuth URL logging
     const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
@@ -133,9 +161,10 @@ export function showLoginScreen() {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
                 `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                `state=${stateParam}&` +
+                `state=${finalStateParam}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
+            console.log('🔗 FORCED OAuth URL:', authUrl);
             window.location.href = authUrl;
         });
         return;
@@ -287,3 +316,7 @@ console.log('Environment Debug:', {
 
 // Update all API calls to use apiUrlWithEnv instead of apiUrl
 // This ensures the backend knows whether the request is from prod or dev environment
+
+// PRODUCTION DEBUG v2.0 - Force cache refresh
+console.log('🚀 Auth.js loaded - Version 2.0 with state parameter fix');
+console.log('📍 Current URL:', window.location?.href || 'unknown');
