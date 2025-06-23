@@ -35,6 +35,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "src/index.html"),
+        // Ensure auth-success.html is included in build
+        "auth-success": resolve(__dirname, "src/auth-success.html"),
       },
     },
   },
