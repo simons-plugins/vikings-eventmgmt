@@ -17,21 +17,7 @@ import { showBlockedScreen, showLoadingState, updateSidebarToggleVisibility, sho
 const clientId = 'x7hx1M0NExVdSiksH1gUBPxkSTn8besx';
 // scope: Defines the permissions requested from OSM (e.g., reading section members, programme, events).
 const scope = 'section:member:read section:programme:read section:event:read section:flexirecord:write' ;
-// redirectUri: The URL to which OSM redirects the user after authentication.
-// Note: This is dynamically constructed in the showLoginScreen function based on the current window origin.
 
-// DEBUG: Check if clientId is being referenced before declaration
-// This should fix the "Cannot access 'clientId' before initialization" error
-const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
-    `client_id=${clientId}&` +
-    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-    `state=${finalStateParam}&` +
-    `scope=${encodeURIComponent(scope)}&` +
-    `response_type=code`;
-console.log('🔗 FORCED OAuth URL:', authUrl);
-window.location.href = authUrl;
-
-// --- Auth functions originally from api.js ---
 // Retrieves the access token from sessionStorage.
 export function getToken() {
     return sessionStorage.getItem('access_token'); // Updated to match the key used in success.js
