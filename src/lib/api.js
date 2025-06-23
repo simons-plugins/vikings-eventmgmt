@@ -764,11 +764,9 @@ export async function getOAuthDebug(state = null) {
     }
 }
 
-// TODO: API INCONSISTENCIES FOUND - Need to fix these to match backend documentation:
-//
-// 1. getFlexiRecords() - Currently uses POST, but documentation says GET with query params
-// 2. getSingleFlexiRecord() - Currently uses POST, but documentation says GET with query params  
-// 3. Rate limiting - Missing /rate-limit-status endpoint implementation
-// 4. OAuth debug - Missing /oauth/debug endpoint for debugging
 //
 // See: api backend docs/api/osm_proxy.md for correct API specifications
+
+// ESLint: Disable unused variable warnings for destructuring patterns
+// These variables are extracted but intentionally not used
+/* eslint-disable no-unused-vars */

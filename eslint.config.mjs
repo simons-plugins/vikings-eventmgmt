@@ -23,8 +23,8 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.browser, // Includes all standard browser global variables.
-        // You can add other global environments like node, jest, etc., or custom globals here.
-        // e.g., ...globals.node
+        ...globals.node,    // Includes Node.js globals like process, __dirname, etc.
+        // You can add other global environments like jest, etc., or custom globals here.
       }
     }
   },
@@ -35,11 +35,15 @@ export default defineConfig([
     language: "markdown/gfm", // Specifies the language processor for GitHub Flavored Markdown.
     extends: ["markdown/recommended"] // Uses recommended rules for Markdown.
   },
-  // You can add more configuration objects here for other file types or specific rule overrides.
-  // For example, to override a rule:
-  // {
-  //   rules: {
-  //     "no-unused-vars": "warn" // Changes the severity of no-unused-vars to a warning.
-  //   }
-  // }
+  // Configuration for rule overrides
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    rules: {
+      "no-unused-vars": ["warn", { 
+        "argsIgnorePattern": "^_",    // Ignore args starting with _
+        "varsIgnorePattern": "^_",    // Ignore variables starting with _
+        "destructuredArrayIgnorePattern": "^_" // Ignore destructured vars starting with _
+      }]
+    }
+  }
 ]);

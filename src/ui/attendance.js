@@ -70,14 +70,18 @@ function addSummaryTableSorting(attendeesByPerson) {
             // Sort logic based on column
             rows.sort((a, b) => {
                 let comparison = 0;
+                const sortOrder = 'asc'; // Add proper sortOrder definition
                 switch (sortColumn) {
                     case 'firstname': comparison = a.dataset.firstname.toLowerCase().localeCompare(b.dataset.firstname.toLowerCase()); break;
                     case 'lastname': comparison = a.dataset.lastname.toLowerCase().localeCompare(b.dataset.lastname.toLowerCase()); break;
-                    case 'name': // Sort by lastname, then firstname
-                        const lnc = a.dataset.lastname.toLowerCase().localeCompare(b.dataset.lastname.toLowerCase());
-                        if (lnc !== 0) comparison = lnc;
-                        else comparison = a.dataset.firstname.toLowerCase().localeCompare(b.dataset.firstname.toLowerCase());
-                        break;
+                    case 'name': {
+                        const nameA = a.person?.first_name || '';
+                        const nameB = b.person?.first_name || '';
+                        const lastNameA = a.person?.last_name || '';
+                        const lastNameB = b.person?.last_name || '';
+                        const result = nameA.localeCompare(nameB) || lastNameA.localeCompare(lastNameB);
+                        return sortOrder === 'asc' ? result : -result;
+                    }
                     case 'status': // Sort by attendance ratio (Yes / Total), then by total Yes count
                         const tYA = parseInt(a.dataset.totalYes) || 0, tNA = parseInt(a.dataset.totalNo) || 0;
                         const tYB = parseInt(b.dataset.totalYes) || 0, tNB = parseInt(b.dataset.totalNo) || 0;

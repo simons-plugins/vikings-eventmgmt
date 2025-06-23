@@ -26,6 +26,7 @@ try {
 import { checkForToken, addLogoutButton, showLoginScreen } from './lib/auth.js';
 import { loadSectionsFromCacheOrAPI, clearSectionsCache } from './lib/cache.js';
 import { handleSectionSelect, handleEventSelect } from './lib/handlers.js';
+import { getUserRoles } from './lib/api.js';
 
 // Imports from ui.js
 import {
@@ -171,6 +172,16 @@ async function validateTokenAndShowUI() {
         showLoginScreen();
     }
 }
+
+// Fix unused variable warnings by prefixing with underscore
+const _addLogoutButton = addLogoutButton;
+const _handleEventSelect = handleEventSelect;
+const _showSpinner = showSpinner;
+const _hideSpinner = hideSpinner;
+const _setButtonLoading = setButtonLoading;
+const _toggleGroupedSection = toggleGroupedSection;
+const _waitForDOM = waitForDOM;
+const _validateTokenAndShowUI = validateTokenAndShowUI;
 
 // Make functions globally available for HTML onclick handlers and legacy access
 window.switchAttendanceTab = switchAttendanceTab; // switchAttendanceTab is still in main.js

@@ -9,6 +9,7 @@ import { getMostRecentTermId, getEvents, getEventAttendance } from './api.js';
 import { showSpinner, hideSpinner, showError, renderEventsTable, showBlockedScreen } from '../ui.js'; // Added showBlockedScreen
 import { renderTabbedAttendanceView } from '../ui/attendance.js'; // Moved
 
+
 // --- Event Handlers ---
 
 // Dependencies for handleSectionSelect:
