@@ -1,0 +1,38 @@
+name: Cypress Tests (Manual Only)
+
+on:
+  workflow_dispatch:  # Manual trigger only - prevents automatic CI runs
+
+# Fix for Cypress HTTPS certificate issue in CI
+# Use HTTP instead of HTTPS for local development server in CI environment
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run dev:ci
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          browser: chrome
+        env:  
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          CYPRESS_baseUrl: http://localhost:3000
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_NODE_ENV: development
+          NODE_ENV: development
