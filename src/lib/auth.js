@@ -1,15 +1,7 @@
 // src/lib/auth.js
-// src/lib/auth.js
 // This module is responsible for all authentication-related logic.
 // It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM)        loginBtn.addEventListener('click', () => {
-            const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
-                `client_id=${clientId}&` +
-                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-                `state=${finalStateParam}&` +
-                `scope=${encodeURIComponent(scope)}&` +
-                `response_type=code`;
-            console.log('🔗 FORCED OAuth URL:', authUrl);
-            window.location.href = authUrl;
+
 // src/lib/auth.js
 // This module is responsible for all authentication-related logic.
 // It manages access tokens, handles the OAuth flow with Online Scout Manager (OSM),
@@ -27,6 +19,17 @@ const clientId = 'x7hx1M0NExVdSiksH1gUBPxkSTn8besx';
 const scope = 'section:member:read section:programme:read section:event:read section:flexirecord:write' ;
 // redirectUri: The URL to which OSM redirects the user after authentication.
 // Note: This is dynamically constructed in the showLoginScreen function based on the current window origin.
+
+// DEBUG: Check if clientId is being referenced before declaration
+// This should fix the "Cannot access 'clientId' before initialization" error
+const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
+    `client_id=${clientId}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+    `state=${finalStateParam}&` +
+    `scope=${encodeURIComponent(scope)}&` +
+    `response_type=code`;
+console.log('🔗 FORCED OAuth URL:', authUrl);
+window.location.href = authUrl;
 
 // --- Auth functions originally from api.js ---
 // Retrieves the access token from sessionStorage.
@@ -317,6 +320,6 @@ console.log('Environment Debug:', {
 // Update all API calls to use apiUrlWithEnv instead of apiUrl
 // This ensures the backend knows whether the request is from prod or dev environment
 
-// PRODUCTION DEBUG v2.0 - Force cache refresh
-console.log('🚀 Auth.js loaded - Version 2.0 with state parameter fix');
-console.log('📍 Current URL:', window.location?.href || 'unknown');
+// CACHE BUSTING v3.0 - Timestamp: 2025-01-23-18:00
+// If you see this exact timestamp in production, the cache has been refreshed
+console.log('🚀 Auth.js loaded - Version 3.0 - TIMESTAMP: 2025-01-23-18:00');
