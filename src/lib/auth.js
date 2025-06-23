@@ -110,7 +110,7 @@ export function showLoginScreen() {
         }
     });
     
-    // Build OAuth redirect URI - backend handles redirect based on state parameter
+    // Build OAuth redirect URI - backend handles OAuth callback and redirects back to frontend
     const redirectUri = `${apiUrl}/oauth/callback`;
     
     // Enhanced OAuth URL logging
