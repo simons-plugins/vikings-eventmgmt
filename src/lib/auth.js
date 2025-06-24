@@ -86,19 +86,18 @@ export function showLoginScreen() {
                          env.DEV ||
                          (typeof window !== 'undefined' && window.location.hostname === 'localhost');
     
-    // Add state parameter for development vs production (so backend uses correct redirect)
-    // Production gets state=prod, development gets state=dev
+    // Legacy state detection - will be replaced below with more accurate logic
     const forceProduction = window.location.hostname !== 'localhost';
-    const stateParam = forceProduction ? 'prod' : 'dev';
+    const legacyStateParam = forceProduction ? 'prod' : 'dev';
     
-    console.log('🧪 TEMPORARY: Forced state detection:', { forceProduction, stateParam });
+    console.log('🧪 LEGACY: Forced state detection:', { forceProduction, legacyStateParam });
 
     // DEBUG: Enhanced logging for production troubleshooting
     console.log('🔍 OAuth Debug Info:', {
         currentDomain: typeof window !== 'undefined' ? window.location.origin : 'unknown',
         hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
         isDevelopment,
-        stateParam,
+        legacyStateParam,
         apiUrl,
         env: {
             VITE_NODE_ENV: env.VITE_NODE_ENV,
@@ -106,21 +105,31 @@ export function showLoginScreen() {
         }
     });
     
-    // AGGRESSIVE FIX: Force correct OAuth URL generation
-    // Override any cached or incorrect redirect URI
-    const CORRECT_BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
-    const redirectUri = `${CORRECT_BACKEND_URL}/oauth/callback`;
+    // Dynamic OAuth URL generation based on current deployment
+    const BACKEND_URL = 'https://vikings-osm-event-manager.onrender.com';
+    const redirectUri = `${BACKEND_URL}/oauth/callback`;
     
-    // Force correct state parameter based on hostname
-    const isProduction = window.location.hostname === 'vikings-eventmgmt.onrender.com';
-    const finalStateParam = isProduction ? 'prod' : 'dev';
+    // Determine environment based on hostname
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isDeployedServer = hostname.includes('.onrender.com') || hostname === 'vikings-eventmgmt.onrender.com';
     
-    console.log('🔧 FORCED OAuth Config:', {
-        hostname: window.location.hostname,
-        isProduction,
+    // For deployed servers (production or PR previews), use production flow
+    // For localhost, use dev flow
+    const stateParam = isDeployedServer ? 'prod' : 'dev';
+    
+    // Pass the current frontend URL to the backend so it knows where to redirect back
+    const currentFrontendUrl = window.location.origin;
+    const redirectUriWithFrontend = `${redirectUri}?frontend_url=${encodeURIComponent(currentFrontendUrl)}`;
+    
+    console.log('🔧 Dynamic OAuth Config:', {
+        hostname,
+        isLocalhost,
+        isDeployedServer,
         stateParam,
-        redirectUri,
-        backendUrl: CORRECT_BACKEND_URL
+        currentFrontendUrl,
+        redirectUri: redirectUriWithFrontend,
+        backendUrl: BACKEND_URL
     });
 
     // Build OAuth redirect URI - backend handles OAuth callback and redirects back to frontend
@@ -145,7 +154,7 @@ export function showLoginScreen() {
         existingLoginBtn.addEventListener('click', () => {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
-                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `redirect_uri=${encodeURIComponent(redirectUriWithFrontend)}&` +
                 `state=${stateParam}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
@@ -185,7 +194,7 @@ export function showLoginScreen() {
         loginBtn.addEventListener('click', () => {
             const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
                 `client_id=${clientId}&` +
-                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `redirect_uri=${encodeURIComponent(redirectUriWithFrontend)}&` +
                 `state=${stateParam}&` +
                 `scope=${encodeURIComponent(scope)}&` +
                 `response_type=code`;
