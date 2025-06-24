@@ -92,18 +92,18 @@ export function renderCampGroupsPage(attendees) {
                                         ${attendee.patrol ? `${attendee.patrol} • ` : ''}
                                         ${attendee.age || 'Age unknown'}
                                     </small>
-                                    ${attendee.SignedInBy ? `
+                                    ${attendee.SignedInBy || attendee['Signed in by'] ? `
                                         <small class="text-success d-block">
                                             <i class="fas fa-sign-in-alt"></i> 
-                                            Signed in by ${attendee.SignedInBy}
-                                            ${attendee.SignedInWhen ? `at ${attendee.SignedInWhen}` : ''}
+                                            Signed in by ${attendee.SignedInBy || attendee['Signed in by']}
+                                            ${(attendee.SignedInWhen || attendee['Signed in when']) ? `at ${attendee.SignedInWhen || attendee['Signed in when']}` : ''}
                                         </small>
                                     ` : ''}
-                                    ${attendee.SignedOutBy ? `
+                                    ${attendee.SignedOutBy || attendee['Signed out by'] ? `
                                         <small class="text-warning d-block">
                                             <i class="fas fa-sign-out-alt"></i> 
-                                            Signed out by ${attendee.SignedOutBy}
-                                            ${attendee.SignedOutWhen ? `at ${attendee.SignedOutWhen}` : ''}
+                                            Signed out by ${attendee.SignedOutBy || attendee['Signed out by']}
+                                            ${(attendee.SignedOutWhen || attendee['Signed out when']) ? `at ${attendee.SignedOutWhen || attendee['Signed out when']}` : ''}
                                         </small>
                                     ` : ''}
                                 </div>
