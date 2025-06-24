@@ -117,12 +117,16 @@ export function showLoginScreen() {
     
     // For deployed servers (production or PR previews), use production flow
     // For localhost, use dev flow
-    const stateParam = isDeployedServer ? 'prod' : 'dev';
+    const baseState = isDeployedServer ? 'prod' : 'dev';
+    const frontendUrl = window.location.origin;
+    const stateParam = `${baseState}&frontend_url=${encodeURIComponent(frontendUrl)}`;
     
     console.log('🔧 Dynamic OAuth Config:', {
         hostname,
         isLocalhost,
         isDeployedServer,
+        baseState,
+        frontendUrl,
         stateParam,
         redirectUri,
         backendUrl: BACKEND_URL
@@ -132,12 +136,10 @@ export function showLoginScreen() {
     // const redirectUri = `${apiUrl}/oauth/callback`;
     
     // Enhanced OAuth URL logging
-    const frontendUrl = window.location.origin;
     const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
         `client_id=${clientId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `state=${stateParam}&` +
-        `frontend_url=${encodeURIComponent(frontendUrl)}&` +
+        `state=${encodeURIComponent(stateParam)}&` +
         `scope=${encodeURIComponent(scope)}&` +
         `response_type=code`;
     
