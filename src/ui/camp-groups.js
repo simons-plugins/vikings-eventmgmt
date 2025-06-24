@@ -72,20 +72,14 @@ export function renderCampGroupsPage(attendees) {
 
         // Render each attendee in the group
         group.forEach(attendee => {
-            const photoUrl = attendee.photo_guid 
-                ? `https://www.onlinescoutmanager.co.uk/sites/default/files/pictures/${attendee.photo_guid}.jpg`
-                : 'https://via.placeholder.com/60x60?text=No+Photo';
-                
             html += `
                 <div class="col-md-6 col-lg-4 mb-3">
                     <div class="attendee-card card h-100">
                         <div class="card-body p-3">
                             <div class="d-flex align-items-center">
-                                <img src="${photoUrl}" 
-                                     alt="${attendee.firstname} ${attendee.lastname}"
-                                     class="attendee-photo rounded-circle mr-3"
-                                     style="width: 50px; height: 50px; object-fit: cover;"
-                                     onerror="this.src='https://via.placeholder.com/50x50?text=No+Photo'">
+                                <div class="attendee-icon-placeholder d-flex align-items-center justify-content-center rounded-circle mr-3 bg-primary text-white" style="width: 50px; height: 50px; min-width: 50px;">
+                                    <i class="fas fa-user"></i>
+                                </div>
                                 <div class="attendee-info flex-grow-1">
                                     <h6 class="mb-1">${attendee.firstname} ${attendee.lastname}</h6>
                                     <small class="text-muted d-block">
@@ -129,7 +123,7 @@ export function renderCampGroupsPage(attendees) {
             .group-header:hover { background-color: #f8f9fa !important; }
             .attendee-card { transition: transform 0.2s; }
             .attendee-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-            .attendee-photo { border: 2px solid #dee2e6; }
+            .attendee-icon-placeholder { font-size: 1.2rem; }
         </style>
     `;
 
