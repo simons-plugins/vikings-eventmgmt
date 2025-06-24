@@ -132,10 +132,12 @@ export function showLoginScreen() {
     // const redirectUri = `${apiUrl}/oauth/callback`;
     
     // Enhanced OAuth URL logging
+    const frontendUrl = window.location.origin;
     const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
         `client_id=${clientId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `state=${stateParam}&` +
+        `frontend_url=${encodeURIComponent(frontendUrl)}&` +
         `scope=${encodeURIComponent(scope)}&` +
         `response_type=code`;
     
