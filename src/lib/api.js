@@ -455,7 +455,7 @@ export async function enrichAttendeesWithCampGroups(attendees, selectedSectionId
             console.log(`Found Viking Event Mgmt record: ${vikingEventRecord.extraid} for section ${sectionId}`);
             
             // Get flexi structure to map field names
-            const flexiStructure = await getFlexiStructure(vikingEventRecord.extraid, sectionId);
+            const flexiStructure = await getFlexiStructure(vikingEventRecord.extraid, sectionId, termId);
             const fieldMapping = {};
             
             if (flexiStructure) {
@@ -559,12 +559,13 @@ export async function enrichAttendeesWithCampGroups(attendees, selectedSectionId
     }
 }
 
-// Fetches flexi record structure and field mappings for a given extraid and sectionid.
+// Fetches flexi record structure and field mappings for a given extraid, sectionid and termid.
 // extraid: The ID of the flexi record.
 // sectionid: The ID of the section.
+// termid: The ID of the term.
 // Returns the flexi record structure object if found, null otherwise.
 // Expected flexi record structure: { fields: { fieldname: { type: string, label: string, ... }, ... }, ... }
-export async function getFlexiStructure(extraid, sectionid) {
+export async function getFlexiStructure(extraid, sectionid, termid) {
     try {
         const token = getToken();
         if (!token) {
@@ -572,7 +573,7 @@ export async function getFlexiStructure(extraid, sectionid) {
             return null;
         }
 
-        const response = await fetch(`${BACKEND_URL}/get-flexi-structure?extraid=${extraid}&sectionid=${sectionid}`, {
+        const response = await fetch(`${BACKEND_URL}/get-flexi-structure?flexirecordid=${extraid}&sectionid=${sectionid}&termid=${termid}`, {
             method: 'GET',
             headers: { 
                 'Authorization': `Bearer ${token}`,
