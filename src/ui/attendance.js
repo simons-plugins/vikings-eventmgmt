@@ -82,7 +82,7 @@ function addSummaryTableSorting(attendeesByPerson) {
                         const result = nameA.localeCompare(nameB) || lastNameA.localeCompare(lastNameB);
                         return sortOrder === 'asc' ? result : -result;
                     }
-                    case 'status': // Sort by attendance ratio (Yes / Total), then by total Yes count
+                    case 'status': { // Sort by attendance ratio (Yes / Total), then by total Yes count
                         const tYA = parseInt(a.dataset.totalYes) || 0, tNA = parseInt(a.dataset.totalNo) || 0;
                         const tYB = parseInt(b.dataset.totalYes) || 0, tNB = parseInt(b.dataset.totalNo) || 0;
                         const totalA = tYA + tNA, totalB = tYB + tNB;
@@ -91,6 +91,7 @@ function addSummaryTableSorting(attendeesByPerson) {
                         else if (rA > rB) comparison = 1;
                         else { if (tYA < tYB) comparison = -1; else if (tYA > tYB) comparison = 1; else comparison = 0; }
                         break;
+                    }
                     default: return 0;
                 }
                 return currentSort.direction === 'asc' ? comparison : -comparison; // Apply direction

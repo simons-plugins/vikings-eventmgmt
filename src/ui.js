@@ -267,7 +267,7 @@ export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = f
     html += `</tbody></table></div>`;
     container.innerHTML = html; // Inject table HTML.
 
-    if (isMobile) addMobileExpandFunctionality(); // Helper function for mobile row expansion.
+    // Mobile expansion functionality would go here if needed
     container.eventsData = events; // Store event data on the container for easy access.
 
     // Add event listeners to event checkboxes.

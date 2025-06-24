@@ -23,25 +23,19 @@ try {
 }
 
 // Import functions from new lib structure
-import { checkForToken, addLogoutButton, showLoginScreen } from './lib/auth.js';
+import { checkForToken, showLoginScreen } from './lib/auth.js';
 import { loadSectionsFromCacheOrAPI, clearSectionsCache } from './lib/cache.js';
-import { handleSectionSelect, handleEventSelect } from './lib/handlers.js';
-import { getUserRoles } from './lib/api.js';
+import { handleSectionSelect } from './lib/handlers.js';
 
 // Imports from ui.js
 import {
     setDefaultSpinner,
     showMainUI,
     renderSectionsTable, // For rendering sections after load
-    showError, // For error handling
-    // Keeping these general utilities in case any remaining main.js code needs them.
-    showSpinner,
-    hideSpinner,
-    setButtonLoading
+    showError // For error handling
 } from './ui.js';
 import {
-    switchAttendanceTab, // For window assignment
-    toggleGroupedSection // For window assignment
+    switchAttendanceTab // For window assignment
 } from './ui/attendance.js';
 
 // Note: The Sentry import logic remains unchanged, handled by its own try/catch block.
@@ -154,34 +148,6 @@ function showFallbackError() {
     }
 }
 
-async function validateTokenAndShowUI() {
-    try {
-        // Make a quick API call to test the token
-        const roles = await getUserRoles();
-        if (roles && roles.length >= 0) {
-            // Token is valid, show main UI
-            showMainUI();
-        } else {
-            // Token invalid, show login
-            showLoginScreen();
-        }
-    } catch (error) {
-        console.log('Token validation failed:', error);
-        // Clear invalid token and show login
-        sessionStorage.removeItem('access_token');
-        showLoginScreen();
-    }
-}
-
-// Fix unused variable warnings by prefixing with underscore
-const _addLogoutButton = addLogoutButton;
-const _handleEventSelect = handleEventSelect;
-const _showSpinner = showSpinner;
-const _hideSpinner = hideSpinner;
-const _setButtonLoading = setButtonLoading;
-const _toggleGroupedSection = toggleGroupedSection;
-const _waitForDOM = waitForDOM;
-const _validateTokenAndShowUI = validateTokenAndShowUI;
 
 // Make functions globally available for HTML onclick handlers and legacy access
 window.switchAttendanceTab = switchAttendanceTab; // switchAttendanceTab is still in main.js

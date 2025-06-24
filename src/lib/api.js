@@ -19,12 +19,6 @@ function checkIfBlocked() {
     }
 }
 
-// Removes the 'osm_blocked' flag from sessionStorage.
-// This is intended for administrative use to re-enable API access after a block.
-export function clearBlockedStatus() {
-    sessionStorage.removeItem('osm_blocked');
-    console.log('OSM blocked status cleared');
-}
 
 // Enhanced rate limit monitoring for backend-provided rate limit info
 function logRateLimitInfo(responseData, apiName) {
@@ -139,36 +133,13 @@ async function handleAPIResponseWithRateLimit(response, apiName) {
         }
         
         return data; // Return the parsed data
-    } catch (jsonError) {
+    } catch (_jsonError) {
         // Handle cases where JSON parsing fails.
         console.error(`❌ ${apiName} returned invalid JSON`);
         throw new Error(`${apiName} returned invalid response`);
     }
 }
 
-// Optional rate limit status checker.
-// Fetches current rate limit status from the backend.
-// Returns an object with rate limit details (osm and backend) or null on failure.
-export async function checkRateLimitStatus() {
-    try {
-        const response = await fetch(`${BACKEND_URL}/rate-limit-status`, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (response.ok) {
-            const statusData = await response.json();
-            if (statusData.rateLimitInfo || statusData._rateLimitInfo) {
-                const info = statusData.rateLimitInfo || statusData._rateLimitInfo;
-                logRateLimitInfo({ _rateLimitInfo: info }, 'Rate Limit Status Check');
-                return info;
-            }
-        }
-    } catch (error) {
-        console.warn('Could not fetch rate limit status:', error);
-    }
-    return null;
-}
 
 // Fetches all terms for all sections the user has access to.
 // Returns an object where keys are section IDs and values are arrays of term objects.
@@ -644,129 +615,13 @@ export async function getSectionConfig(sectionId) {
     }
 }
 
-// Fetches contact details for a specific member (scout).
-// sectionid: The ID of the section.
-// scoutid: The ID of the member (scout).
-// Returns contact details object with member information.
-export async function getContactDetails(sectionId, scoutId) {
-    try {
-        const token = getToken();
-        if (!token) {
-            handleTokenExpiration();
-            return null;
-        }
 
-        const response = await fetch(`${BACKEND_URL}/get-contact-details?sectionid=${sectionId}&scoutid=${scoutId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
 
-        const data = await handleAPIResponseWithRateLimit(response, 'getContactDetails');
-        return data || null;
 
-    } catch (error) {
-        console.error(`Error fetching contact details for scout ${scoutId}:`, error);
-        throw error;
-    }
-}
-
-// Fetches a list of members for a specific section.
-// sectionid: The ID of the section.
-// Returns an object with items array containing member summary data.
-export async function getListOfMembers(sectionId) {
-    try {
-        const token = getToken();
-        if (!token) {
-            handleTokenExpiration();
-            return { identifier: null, label: null, items: [] };
-        }
-
-        const response = await fetch(`${BACKEND_URL}/get-list-of-members?sectionid=${sectionId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const data = await handleAPIResponseWithRateLimit(response, 'getListOfMembers');
-        return data || { identifier: null, label: null, items: [] };
-
-    } catch (error) {
-        console.error(`Error fetching members list for section ${sectionId}:`, error);
-        throw error;
-    }
-}
-
-// Updates a specific field (column) for a member within a flexi-record.
-// sectionid: The ID of the section.
-// scoutid: The ID of the member.
-// flexirecordid: The ID of the flexi-record table.
-// columnid: The ID of the column within the flexi-record to update.
-// value: The new value for the field.
-export async function updateFlexiRecord(sectionId, scoutId, flexiRecordId, columnId, value) {
-    try {
-        checkIfBlocked();
-        
-        const token = getToken();
-        if (!token) {
-            handleTokenExpiration();
-            return null;
-        }
-
-        const response = await fetch(`${BACKEND_URL}/update-flexi-record`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                sectionid: sectionId,
-                scoutid: scoutId,
-                flexirecordid: flexiRecordId,
-                columnid: columnId,
-                value: value
-            })
-        });
-
-        const data = await handleAPIResponseWithRateLimit(response, 'updateFlexiRecord');
-        return data || null;
-
-    } catch (error) {
-        console.error('Error updating flexi record:', error);
-        throw error;
-    }
-}
-
-// Missing function from API documentation - add OAuth debug helper
-export async function getOAuthDebug(state = null) {
-    try {
-        const url = state ? `${BACKEND_URL}/oauth/debug?state=${state}` : `${BACKEND_URL}/oauth/debug`;
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            return data;
-        } else {
-            console.error('OAuth debug request failed:', response.status);
-            return null;
-        }
-    } catch (error) {
-        console.error('Error fetching OAuth debug info:', error);
-        return null;
-    }
-}
 
 //
 // See: api backend docs/api/osm_proxy.md for correct API specifications
 
 // ESLint: Disable unused variable warnings for destructuring patterns
 // These variables are extracted but intentionally not used
-/* eslint-disable no-unused-vars */
+ 

@@ -5,7 +5,7 @@
 // and triggers UI updates to display this data based on user actions.
 
 // --- Imports ---
-import { getMostRecentTermId, getEvents, getEventAttendance } from './api.js';
+import { getMostRecentTermId, getEvents, getEventAttendance, enrichAttendeesWithCampGroups } from './api.js';
 import { showSpinner, hideSpinner, showError, renderEventsTable, showBlockedScreen } from '../ui.js'; // Added showBlockedScreen
 import { renderTabbedAttendanceView } from '../ui/attendance.js'; // Moved
 
@@ -88,7 +88,7 @@ export async function handleSectionSelect(selectedSectionIds, currentSectionsDat
 
 // Handles the selection of one or more events by the user.
 // Fetches attendance data for the selected events and renders it in a tabbed view.
-export async function handleEventSelect(selectedEvents, currentSectionsData) {
+export async function handleEventSelect(selectedEvents, _currentSectionsData) {
     // If no events are selected, show an error message.
     if (!selectedEvents || selectedEvents.length === 0) {
         showError('Please select at least one event');

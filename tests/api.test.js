@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { testBackendConnection, checkRateLimitStatus } from '../src/lib/api.js';
+import { testBackendConnection } from '../src/lib/api.js';
 
 global.fetch = vi.fn();
 
@@ -56,29 +56,4 @@ describe('API Functions', () => {
         });
     });
 
-    describe('checkRateLimitStatus', () => {
-        it('should return rate limit info when available', async () => {
-            const mockRateLimitInfo = {
-                osm: { remaining: 100, limit: 200 },
-                backend: { remaining: 50, limit: 100 }
-            };
-
-            global.fetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ _rateLimitInfo: mockRateLimitInfo })
-            });
-
-            const result = await checkRateLimitStatus();
-            
-            expect(result).toEqual(mockRateLimitInfo);
-        });
-
-        it('should return null for failed requests', async () => {
-            global.fetch.mockRejectedValueOnce(new Error('Network error'));
-
-            const result = await checkRateLimitStatus();
-            
-            expect(result).toBeNull();
-        });
-    });
 });
