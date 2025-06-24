@@ -23,20 +23,20 @@ try {
 }
 
 // Import functions from new lib structure
-import { checkForToken, showLoginScreen } from './lib/auth.js';
+import { checkForToken } from './lib/auth.js';
 import { loadSectionsFromCacheOrAPI, clearSectionsCache } from './lib/cache.js';
-import { handleSectionSelect } from './lib/handlers.js';
+
+// Import new page system
+import { initializeRouter, showPage } from './lib/page-router.js';
+import { initializeSectionsPage } from './pages/sections-page.js';
+import { initializeEventsPage } from './pages/events-page.js';
+import { initializeAttendancePage } from './pages/attendance-page.js';
 
 // Imports from ui.js
 import {
     setDefaultSpinner,
-    showMainUI,
-    renderSectionsTable, // For rendering sections after load
     showError // For error handling
 } from './ui.js';
-import {
-    switchAttendanceTab // For window assignment
-} from './ui/attendance.js';
 
 // Note: The Sentry import logic remains unchanged, handled by its own try/catch block.
 // Constants clientId, scope are now defined in auth.js as they are used by showLoginScreen.
@@ -85,38 +85,20 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
             return;
         }
         
+        // Initialize the page router system
+        initializeRouter();
+        
         // Check for existing token first - this will determine if user is logged in
         console.log('Calling checkForToken...');
         await checkForToken(); // Imported from lib/auth.js
         
-        // If user is authenticated (i.e., not on login screen), load and render sections.
+        // If user is authenticated (i.e., not on login screen), initialize the app pages
         // The body will not have 'login-screen' class if authenticated.
         if (!document.body.classList.contains('login-screen')) {
-            const sectionsContainer = document.getElementById('sections-table-container');
-            if (sectionsContainer) {
-                sectionsContainer.innerHTML = `<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div> <small class="text-muted ms-2">Loading sections...</small></div>`;
-            }
-            try {
-                const sectionsData = await loadSectionsFromCacheOrAPI(); // Imported from lib/cache.js
-                if (sectionsData) {
-                    // Update the global currentSections variable with the loaded data.
-                    currentSections = sectionsData; // Update global currentSections
-                    // Render the sections table with the loaded sections.
-                    // The handleSectionSelect callback is provided to handle section selection events.
-                    renderSectionsTable(currentSections, (selectedIds) => {
-                        handleSectionSelect(selectedIds, currentSections); // handleSectionSelect from lib/handlers.js
-                    });
-                } else if (sectionsContainer) { // Handle case where sectionsData is null/empty but no error thrown
-                    sectionsContainer.innerHTML = `<div class="alert alert-info">No sections found or an issue occurred.</div>`;
-                }
-            } catch (error) {
-                console.error('Error loading sections in main.js:', error);
-                if (sectionsContainer) { // Show error in the specific container
-                    sectionsContainer.innerHTML = `<div class="alert alert-danger alert-sm"><i class="fas fa-exclamation-triangle"></i> Failed to load sections. <button class="btn btn-outline-primary btn-sm float-end" onclick="window.location.reload()">Retry</button></div>`;
-                } else { // Fallback to general showError if container isn't there
-                    showError('Failed to load sections data. Please try refreshing.');
-                }
-            }
+            console.log('User is authenticated, initializing page system');
+            await initializeAppPages();
+        } else {
+            console.log('User not authenticated, staying on login screen');
         }
 
     } catch (error) { // Catch errors from checkForToken or other setup
@@ -124,6 +106,45 @@ document.addEventListener('DOMContentLoaded', async function initializeApp() {
         showFallbackError(); // General fallback for critical errors
     }
 });
+
+// Initialize the app pages system
+async function initializeAppPages() {
+    try {
+        console.log('Loading sections data for page system...');
+        
+        // Show the login screen initially while we load data
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen) {
+            loginScreen.style.display = 'block';
+        }
+        
+        // Load sections data
+        const sectionsData = await loadSectionsFromCacheOrAPI();
+        
+        if (sectionsData && sectionsData.length > 0) {
+            // Hide login screen and show the sections page
+            if (loginScreen) {
+                loginScreen.style.display = 'none';
+            }
+            
+            // Initialize the sections page with the loaded data
+            await initializeSectionsPage(sectionsData);
+            
+            // Show the sections page
+            showPage('sections');
+            
+            console.log(`Initialized page system with ${sectionsData.length} sections`);
+        } else {
+            // No sections data available
+            console.warn('No sections data available');
+            showError('No sections found. Please contact your administrator.');
+        }
+        
+    } catch (error) {
+        console.error('Error initializing app pages:', error);
+        showError('Failed to load application data. Please try refreshing.');
+    }
+}
 
 // Displays a generic error message directly in the DOM when critical initialization fails.
 // This provides a user-friendly way to suggest a page refresh.
@@ -149,7 +170,13 @@ function showFallbackError() {
 }
 
 
-// Make functions globally available for HTML onclick handlers and legacy access
-window.switchAttendanceTab = switchAttendanceTab; // switchAttendanceTab is still in main.js
+// Make functions globally available for HTML onclick handlers and page navigation
 window.clearSectionsCache = clearSectionsCache; // Imported from ./lib/cache.js
 window.loadSectionsFromCacheOrAPI = loadSectionsFromCacheOrAPI; // Imported from ./lib/cache.js
+
+// Page initialization functions (used when navigating between pages)
+window.initializeEventsPage = initializeEventsPage;
+window.initializeAttendancePage = initializeAttendancePage;
+
+// Note: Page navigation functions (goToEvents, goToAttendance, goBack, setAttendanceView)
+// are already made global by the page router in initializeRouter()

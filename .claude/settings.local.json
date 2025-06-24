@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(npm version:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }
