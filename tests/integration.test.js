@@ -1,14 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
-vi.mock('../src/lib/api.js');
-vi.mock('../src/ui.js');
+// Integration tests placeholder - remove this file if not needed
+// or add actual integration tests here
 
 describe('Integration Tests', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it('should integrate components properly', () => {
-        expect(true).toBe(true);
-    });
+  it.skip('placeholder test - implement integration tests here', () => {
+    // Add integration tests when ready
+  });
 });

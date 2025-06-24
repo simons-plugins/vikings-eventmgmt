@@ -283,16 +283,7 @@ export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = f
             }
         });
     });
-    // Commenting out sortable headers as the function is not fully defined here.
-    // addSortableHeaders('events-table', events, sortedEvents => renderEventsTable(sortedEvents, onLoadAttendees, forceMobileLayout));
 }
-
-// Minimal addMobileExpandFunctionality (assuming it's defined elsewhere or simplified for this context)
-// This function would typically add event listeners to make table rows expandable on mobile.
-function addMobileExpandFunctionality() { /* ... Placeholder for mobile expand logic ... */ }
-// Minimal addSortableHeaders (assuming it's defined elsewhere or simplified for this context)
-// function addSortableHeaders(tableId, data, renderFunction) { /* ... Placeholder for table sorting logic ... */ }
-
 
 // --- General UI Functions (previously in main.js, then attendance.js, now correctly in ui.js) ---
 
@@ -302,7 +293,7 @@ export function showMainUI() {
     const mainContainer = document.querySelector('main');
     if (!mainContainer) { console.error('Main container not found'); return; }
     // Basic structure for the main content area, including a placeholder for attendance details.
-    mainContainer.innerHTML = `<div class="container-fluid p-0"><div class="row no-gutters"><div class="col-12"><div id="app-content"><div id="attendance-panel" class="mt-4"><div class="card shadow-sm h-100"><div class="card-header bg-info text-white"><h5 class="mb-0">Attendance Details</h5></div><div class="card-body"><p class="text-muted text-center">Use the sidebar to load sections and events, then view attendance details here.</p></div></div></div></div></div></div></div>`;
+    mainContainer.innerHTML = `<div class="container-fluid p-0"><div class="row no-gutters"><div class="col-12"><div id="app-content"><div id="attendance-panel" class="mt-4"><div class="card shadow-sm h-100"><div class="card-header bg-info text-white"><h5 class="mb-0">Attendance Details</h5></div><div class="card-body"><p class="text-muted text-center">Use the sidebar to load sections and events, then view attendance details here.</p></div></div></div></div></div></div>`;
 
     initializeSidebar(); // Set up sidebar functionality.
 
@@ -404,3 +395,8 @@ export function showLoadingState() {
     // Simple HTML structure with a spinner and loading text.
     mainContainer.innerHTML = `<div class="row justify-content-center"><div class="col-12 col-sm-8 col-md-6 col-lg-4"><div class="card shadow-sm mb-4"><div class="card-body text-center"><div class="spinner-border text-primary mb-3" role="status"><span class="sr-only">Loading...</span></div><p class="text-muted">Loading application...</p></div></div></div></div>`;
 }
+
+
+
+// Make functions globally available for onclick handlers
+window.loadSectionsFromCacheOrAPI = loadSectionsFromCacheOrAPI;
