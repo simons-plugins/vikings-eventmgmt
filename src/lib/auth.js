@@ -6,7 +6,7 @@
 // --- Imports ---
 import { getUserRoles } from './api.js';
 // Assuming these UI functions will be available from ui.js or similar
-import { showBlockedScreen, showSpinner, updateSidebarToggleVisibility, showMainUI } from '../ui.js';
+import { showBlockedScreen, showSpinner, hideSpinner, updateSidebarToggleVisibility, showMainUI } from '../ui.js';
 
 // --- Constants ---
 // clientId: The unique identifier for this application registered with Online Scout Manager (OSM).
@@ -218,6 +218,7 @@ export async function checkForToken() {
         } else {
             // If no token is found, the user is not authenticated.
             console.log('No token found, showing login');
+            hideSpinner(); // Hide the authentication checking spinner
             document.body.classList.add('login-screen'); // Add login-specific body class
             updateSidebarToggleVisibility(); // Update UI elements
             showLoginScreen(); // Display the login screen
@@ -225,6 +226,7 @@ export async function checkForToken() {
     } catch (error) {
         // If token validation fails (e.g., API call returns an auth error), treat as unauthenticated.
         console.error('Token validation failed:', error);
+        hideSpinner(); // Hide the authentication checking spinner
         sessionStorage.removeItem('access_token'); // Remove the invalid token
         document.body.classList.add('login-screen'); // Add login-specific body class
         updateSidebarToggleVisibility(); // Update UI elements
