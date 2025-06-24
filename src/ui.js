@@ -288,26 +288,38 @@ export function renderEventsTable(events, onLoadAttendees, forceMobileLayout = f
 // --- General UI Functions (previously in main.js, then attendance.js, now correctly in ui.js) ---
 
 // Sets up the primary application interface after successful login.
-// This includes creating the main content area and initializing the sidebar.
+// This now works with the new page system instead of the old sidebar.
 export function showMainUI() {
     const mainContainer = document.querySelector('main');
     if (!mainContainer) { console.error('Main container not found'); return; }
-    // Basic structure for the main content area, including a placeholder for attendance details.
-    mainContainer.innerHTML = `<div class="container-fluid p-0"><div class="row no-gutters"><div class="col-12"><div id="app-content"><div id="attendance-panel" class="mt-4"><div class="card shadow-sm h-100"><div class="card-header bg-info text-white"><h5 class="mb-0">Attendance Details</h5></div><div class="card-body"><p class="text-muted text-center">Use the sidebar to load sections and events, then view attendance details here.</p></div></div></div></div></div></div>`;
-
-    initializeSidebar(); // Set up sidebar functionality.
-
-    // Ensure sidebar content area exists, recreate if necessary (e.g., after login screen).
-    const sidebarContent = document.querySelector('.sidebar-content');
-    if (!sidebarContent) {
-        console.warn('Sidebar content not found, recreating...');
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) {
-            sidebar.innerHTML = `<div class="sidebar-header"><h3>Sections & Events</h3></div><div class="sidebar-content"><div id="sections-table-container"></div><div id="events-table-container" class="mt-3"></div></div>`;
-        }
+    
+    // Debug: Check what's in the main container
+    console.log('🔍 showMainUI() - Main container HTML length:', mainContainer.innerHTML.length);
+    console.log('🔍 showMainUI() - Page elements before:', {
+        'sections-page': !!document.getElementById('sections-page'),
+        'events-page': !!document.getElementById('events-page'), 
+        'attendance-page': !!document.getElementById('attendance-page')
+    });
+    
+    // Make sure the main container is visible
+    mainContainer.style.display = 'block';
+    
+    // Hide the login screen
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        loginScreen.style.display = 'none';
     }
-    addLogoutButton(); // Add the logout button to the sidebar.
-    console.log('Main UI initialized - ready for sidebar interaction');
+    
+    // Debug: Check what's in the main container after
+    console.log('🔍 showMainUI() - Page elements after:', {
+        'sections-page': !!document.getElementById('sections-page'),
+        'events-page': !!document.getElementById('events-page'), 
+        'attendance-page': !!document.getElementById('attendance-page')
+    });
+    
+    // The page system HTML is already in place from index.html
+    // No need to replace the content, just ensure visibility
+    console.log('Main UI initialized - ready for page system');
 }
 
 // Internal helper function for showMainUI to set up sidebar interactions.
@@ -362,15 +374,10 @@ function initializeSidebar() {
     });
 }
 
-// Shows or hides the sidebar toggle button based on whether the login screen is active.
-// The toggle button should typically be hidden on the login screen.
+// Legacy function - no longer needed with page system but kept for compatibility
 export function updateSidebarToggleVisibility() {
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    if (sidebarToggle) {
-        const isLoginScreen = document.body.classList.contains('login-screen');
-        console.log('Updating sidebar toggle visibility:', { isLoginScreen, element: sidebarToggle });
-        sidebarToggle.style.display = isLoginScreen ? 'none' : 'block';
-    }
+    // No sidebar in the new page system, so this is a no-op
+    return;
 }
 
 // Renders a prominent error message and UI state when API access has been blocked by OSM.
