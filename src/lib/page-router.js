@@ -16,8 +16,19 @@ const appState = {
 export function showPage(page, options = {}) {
     console.log(`Navigating to page: ${page}`);
     
-    // Hide all pages
+    // Debug: Check if main container exists
+    const mainContainer = document.querySelector('main');
+    console.log('Main container found:', !!mainContainer);
+    
+    // Debug: List all elements with page IDs
     const pages = ['sections-page', 'events-page', 'attendance-page'];
+    console.log('Page elements check:', pages.map(pageId => ({
+        id: pageId,
+        exists: !!document.getElementById(pageId),
+        display: document.getElementById(pageId)?.style.display
+    })));
+    
+    // Hide all pages
     pages.forEach(pageId => {
         const element = document.getElementById(pageId);
         if (element) {
@@ -31,6 +42,8 @@ export function showPage(page, options = {}) {
         targetPage.style.display = 'block';
         appState.currentPage = page;
         
+        console.log(`Successfully showed page: ${page}-page`);
+        
         // Update page-specific content if needed
         if (options.render && typeof options.render === 'function') {
             options.render();
@@ -40,6 +53,9 @@ export function showPage(page, options = {}) {
         updateNavigation();
     } else {
         console.error(`Page not found: ${page}-page`);
+        // Debug: Show what's actually in the DOM
+        console.log('Available elements with IDs:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+        console.log('Main container HTML content:', mainContainer?.innerHTML.substring(0, 500));
     }
 }
 
@@ -168,7 +184,9 @@ export function getAttendanceView() {
 // Initialize the page router
 export function initializeRouter() {
     console.log('Page router initialized');
-    showPage('sections');
+    
+    // Don't show any page yet - wait for authentication to complete
+    // The page will be shown by initializeAppPages() after auth
     
     // Set up global navigation handlers
     window.goToEvents = goToEvents;

@@ -35,7 +35,8 @@ import { initializeAttendancePage } from './pages/attendance-page.js';
 // Imports from ui.js
 import {
     setDefaultSpinner,
-    showError // For error handling
+    showError, // For error handling
+    hideSpinner // To hide loading spinner
 } from './ui.js';
 
 // Note: The Sentry import logic remains unchanged, handled by its own try/catch block.
@@ -112,36 +113,30 @@ async function initializeAppPages() {
     try {
         console.log('Loading sections data for page system...');
         
-        // Show the login screen initially while we load data
-        const loginScreen = document.getElementById('login-screen');
-        if (loginScreen) {
-            loginScreen.style.display = 'block';
-        }
-        
         // Load sections data
         const sectionsData = await loadSectionsFromCacheOrAPI();
         
         if (sectionsData && sectionsData.length > 0) {
-            // Hide login screen and show the sections page
-            if (loginScreen) {
-                loginScreen.style.display = 'none';
-            }
-            
             // Initialize the sections page with the loaded data
             await initializeSectionsPage(sectionsData);
             
             // Show the sections page
             showPage('sections');
             
+            // Hide loading spinner since page system is ready
+            hideSpinner();
+            
             console.log(`Initialized page system with ${sectionsData.length} sections`);
         } else {
             // No sections data available
             console.warn('No sections data available');
+            hideSpinner();
             showError('No sections found. Please contact your administrator.');
         }
         
     } catch (error) {
         console.error('Error initializing app pages:', error);
+        hideSpinner();
         showError('Failed to load application data. Please try refreshing.');
     }
 }

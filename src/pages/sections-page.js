@@ -1,9 +1,11 @@
 // src/pages/sections-page.js
 // Page component for sections selection
-// Handles rendering sections table with multi-select and continue button
+// Handles rendering sections as interactive buttons with multi-select and continue button
 
-import { renderSectionsTable } from '../ui.js';
 import { setSelectedSections } from '../lib/page-router.js';
+
+// Track selected sections
+let selectedSectionIds = [];
 
 // Initialize the sections page
 export function initializeSectionsPage(sectionsData) {
@@ -29,12 +31,67 @@ export function initializeSectionsPage(sectionsData) {
     // Store sections data for use in other pages
     window.currentSectionsData = sectionsData;
     
-    // Render the sections table with our custom callback
-    renderSectionsTable(sectionsData, onSectionSelectionChange);
+    // Reset selected sections
+    selectedSectionIds = [];
+    
+    // Render the sections as buttons
+    renderSectionsButtons(sectionsData);
+}
+
+// Render sections as interactive buttons
+function renderSectionsButtons(sectionsData) {
+    const container = document.getElementById('sections-table-container');
+    if (!container) return;
+    
+    // Create button grid
+    const buttonsHTML = sectionsData.map(section => {
+        const sectionId = section.sectionid || section.id;
+        const sectionName = section.sectionname || section.name;
+        
+        return `
+            <button 
+                class="section-button btn btn-outline-primary btn-lg m-2" 
+                data-section-id="${sectionId}"
+                onclick="toggleSectionSelection('${sectionId}')"
+            >
+                <i class="fas fa-users me-2"></i>
+                ${sectionName}
+            </button>
+        `;
+    }).join('');
+    
+    container.innerHTML = `
+        <div class="text-center mb-4">
+            <p class="text-muted">Select the sections you want to manage events for:</p>
+        </div>
+        <div class="d-flex flex-wrap justify-content-center">
+            ${buttonsHTML}
+        </div>
+    `;
+}
+
+// Toggle section selection
+function toggleSectionSelection(sectionId) {
+    const button = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (!button) return;
+    
+    if (selectedSectionIds.includes(sectionId)) {
+        // Deselect
+        selectedSectionIds = selectedSectionIds.filter(id => id !== sectionId);
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-primary');
+    } else {
+        // Select
+        selectedSectionIds.push(sectionId);
+        button.classList.remove('btn-outline-primary');
+        button.classList.add('btn-primary');
+    }
+    
+    onSectionSelectionChange();
 }
 
 // Handle section selection changes
-function onSectionSelectionChange(selectedSectionIds) {
+function onSectionSelectionChange() {
     console.log('Sections selected:', selectedSectionIds);
     
     // Get the full section data for selected sections
@@ -60,11 +117,10 @@ function onSectionSelectionChange(selectedSectionIds) {
     }
 }
 
+// Make toggle function globally available
+window.toggleSectionSelection = toggleSectionSelection;
+
 // Get selected sections (for external use)
 export function getSelectedSectionsOnPage() {
-    const container = document.getElementById('sections-table-container');
-    if (!container) return [];
-    
-    const checkboxes = container.querySelectorAll('.section-checkbox:checked');
-    return Array.from(checkboxes).map(cb => cb.value);
+    return selectedSectionIds;
 }

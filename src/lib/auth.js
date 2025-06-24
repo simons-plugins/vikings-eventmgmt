@@ -6,7 +6,7 @@
 // --- Imports ---
 import { getUserRoles } from './api.js';
 // Assuming these UI functions will be available from ui.js or similar
-import { showBlockedScreen, showLoadingState, updateSidebarToggleVisibility, showMainUI } from '../ui.js';
+import { showBlockedScreen, showSpinner, updateSidebarToggleVisibility, showMainUI } from '../ui.js';
 
 // --- Constants ---
 // clientId: The unique identifier for this application registered with Online Scout Manager (OSM).
@@ -77,7 +77,8 @@ export function isAuthenticated() {
 // --- Auth functions originally from main.js ---
 // Displays the login screen, allowing users to authenticate via Online Scout Manager (OSM).
 export function showLoginScreen() {
-    console.log('Showing login screen');
+    console.log('🔍 showLoginScreen() called');
+    console.trace('Call stack for showLoginScreen');
 
     // Get environment variables with safe fallbacks for test environments
     const env = import.meta.env || {};
@@ -118,17 +119,12 @@ export function showLoginScreen() {
     // For localhost, use dev flow
     const stateParam = isDeployedServer ? 'prod' : 'dev';
     
-    // Pass the current frontend URL to the backend so it knows where to redirect back
-    const currentFrontendUrl = window.location.origin;
-    const redirectUriWithFrontend = `${redirectUri}?frontend_url=${encodeURIComponent(currentFrontendUrl)}`;
-    
     console.log('🔧 Dynamic OAuth Config:', {
         hostname,
         isLocalhost,
         isDeployedServer,
         stateParam,
-        currentFrontendUrl,
-        redirectUri: redirectUriWithFrontend,
+        redirectUri,
         backendUrl: BACKEND_URL
     });
 
@@ -152,12 +148,6 @@ export function showLoginScreen() {
         const mainContainer = document.querySelector('main.container') || document.querySelector('main');
         if (mainContainer) mainContainer.style.display = 'block';
         existingLoginBtn.addEventListener('click', () => {
-            const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
-                `client_id=${clientId}&` +
-                `redirect_uri=${encodeURIComponent(redirectUriWithFrontend)}&` +
-                `state=${stateParam}&` +
-                `scope=${encodeURIComponent(scope)}&` +
-                `response_type=code`;
             window.location.href = authUrl;
         });
         return;
@@ -192,12 +182,6 @@ export function showLoginScreen() {
     const loginBtn = document.getElementById('osm-login-btn');
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
-            const authUrl = `https://www.onlinescoutmanager.co.uk/oauth/authorize?` +
-                `client_id=${clientId}&` +
-                `redirect_uri=${encodeURIComponent(redirectUriWithFrontend)}&` +
-                `state=${stateParam}&` +
-                `scope=${encodeURIComponent(scope)}&` +
-                `response_type=code`;
             window.location.href = authUrl;
         });
     }
@@ -219,7 +203,7 @@ export async function checkForToken() {
         return; // Halt further execution
     }
 
-    showLoadingState(); // Display a loading indicator while checking token validity
+    showSpinner('Checking authentication...'); // Display a loading indicator while checking token validity
 
     try {
         if (token) {

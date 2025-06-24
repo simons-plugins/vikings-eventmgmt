@@ -416,6 +416,64 @@ header {
     border-color: #007bff;
 }
 
+/* === SECTION BUTTON STYLES === */
+/* Interactive section selection buttons */
+
+.section-button {
+    min-width: 200px;
+    max-width: 280px;
+    height: 80px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-width: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.section-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    border-color: #007bff;
+}
+
+.section-button.btn-outline-primary {
+    background-color: #ffffff;
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.section-button.btn-primary {
+    background-color: #007bff;
+    color: #ffffff;
+    border-color: #0056b3;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.4);
+}
+
+.section-button.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.section-button i {
+    transition: transform 0.2s ease;
+}
+
+.section-button:hover i {
+    transform: scale(1.1);
+}
+
+/* Responsive section button layout */
+@media (max-width: 576px) {
+    .section-button {
+        min-width: 160px;
+        max-width: 100%;
+        height: 70px;
+        font-size: 1rem;
+        margin: 0.5rem !important;
+    }
+}
+
 
 /* === FLEXI RECORDS TABLE STYLES === */
 .cursor-pointer {

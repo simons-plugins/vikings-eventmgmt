@@ -40,6 +40,7 @@ export async function initializeAttendancePage() {
         // Load attendance data for all selected events
         const attendanceData = await loadAttendanceForEvents(selectedEvents);
         
+        console.log('💾 Loaded attendance data:', attendanceData?.length || 0, 'attendees');
         hideSpinner();
         
         if (!attendanceData || attendanceData.length === 0) {
@@ -65,7 +66,9 @@ export async function initializeAttendancePage() {
         setAttendanceData(attendanceData);
         
         // Render the attendance views
-        await renderAttendanceViews(attendanceData);
+        console.log('🎨 Starting to render attendance views...');
+        await renderAttendanceViewsSimple(attendanceData);
+        console.log('✅ Finished rendering attendance views');
         
         // Set default view to summary
         setAttendanceView('summary');
@@ -135,48 +138,194 @@ async function loadAttendanceForEvents(selectedEvents) {
     return allAttendees;
 }
 
-// Render all attendance views
-async function renderAttendanceViews(attendanceData) {
+// Render attendance views with simplified approach
+async function renderAttendanceViewsSimple(attendanceData) {
     try {
-        // For now, we'll render the data using the existing tabbed view logic
-        // but adapt it to work with our new page structure
+        console.log('🔄 renderAttendanceViewsSimple called with', attendanceData?.length || 0, 'attendees');
         
-        // Create a temporary container for the tabbed view to render into
-        const tempContainer = document.createElement('div');
+        // Render summary view
+        renderSummaryView(attendanceData);
         
-        // Use the existing renderTabbedAttendanceView function
-        await renderTabbedAttendanceView(attendanceData, getSelectedEvents(), tempContainer);
+        // Render detailed view
+        renderDetailedView(attendanceData);
         
-        // Extract the rendered content and distribute it to our view containers
-        distributeRenderedContent(tempContainer);
+        // Render camp groups view (placeholder)
+        renderCampGroupsView(attendanceData);
         
     } catch (error) {
-        console.error('Error rendering attendance views:', error);
+        console.error('❌ Error rendering attendance views:', error);
         throw error;
     }
 }
 
+// Render the summary view for upcoming event management
+function renderSummaryView(attendanceData) {
+    const summaryView = document.getElementById('summary-view');
+    if (!summaryView) return;
+    
+    console.log('📊 Rendering summary view for', attendanceData.length, 'registered attendees');
+    
+    // Group attendees by person
+    const attendeesByPerson = {};
+    attendanceData.forEach(attendee => {
+        const key = `${attendee.firstname}_${attendee.lastname}_${attendee.dob}`;
+        if (!attendeesByPerson[key]) {
+            attendeesByPerson[key] = {
+                firstname: attendee.firstname,
+                lastname: attendee.lastname,
+                events: []
+            };
+        }
+        attendeesByPerson[key].events.push({
+            eventname: attendee.eventname,
+            eventdate: attendee.eventdate,
+            status: attendee.attending || attendee.status || 'Unknown'
+        });
+    });
+    
+    const people = Object.values(attendeesByPerson);
+    
+    summaryView.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Name</th>
+                        <th>Events Registered</th>
+                        <th>Status Overview</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${people.map(person => {
+                        const confirmedCount = person.events.filter(e => e.status?.toLowerCase() === 'yes').length;
+                        const pendingCount = person.events.filter(e => ['maybe', 'invited', 'unknown'].includes(e.status?.toLowerCase())).length;
+                        const totalEvents = person.events.length;
+                        
+                        return `
+                            <tr>
+                                <td><strong>${person.firstname} ${person.lastname}</strong></td>
+                                <td>${totalEvents}</td>
+                                <td>
+                                    ${confirmedCount > 0 ? `<span class="badge bg-success me-1">${confirmedCount} Confirmed</span>` : ''}
+                                    ${pendingCount > 0 ? `<span class="badge bg-warning me-1">${pendingCount} Pending</span>` : ''}
+                                    ${confirmedCount === 0 && pendingCount === 0 ? '<span class="badge bg-secondary">No Response</span>' : ''}
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 text-muted text-center">
+            <small>Showing ${people.length} registered attendees for upcoming events</small>
+        </div>
+    `;
+}
+
+// Render the detailed view for upcoming event management
+function renderDetailedView(attendanceData) {
+    const detailedView = document.getElementById('detailed-view');
+    if (!detailedView) return;
+    
+    console.log('📋 Rendering detailed view for', attendanceData.length, 'registrations');
+    
+    detailedView.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Event</th>
+                        <th>Event Date</th>
+                        <th>Registration Status</th>
+                        <th>Section</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${attendanceData.map((attendee, index) => {
+                        const status = attendee.attending || attendee.status || 'Unknown';
+                        const statusColor = status.toLowerCase() === 'yes' ? 'success' : 
+                                          ['maybe', 'invited'].includes(status.toLowerCase()) ? 'warning' : 'secondary';
+                        
+                        return `
+                            <tr>
+                                <td>${attendee.firstname} ${attendee.lastname}</td>
+                                <td>${attendee.eventname}</td>
+                                <td>${attendee.eventdate || 'TBA'}</td>
+                                <td>
+                                    <span class="badge bg-${statusColor}">
+                                        ${status}
+                                    </span>
+                                </td>
+                                <td>${attendee.sectionname || 'N/A'}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3 text-muted text-center">
+            <small>Showing ${attendanceData.length} event registrations</small>
+        </div>
+    `;
+}
+
+// Render the camp groups view
+function renderCampGroupsView(attendanceData) {
+    const campGroupsView = document.getElementById('campgroups-view');
+    if (!campGroupsView) return;
+    
+    campGroupsView.innerHTML = `
+        <div class="text-center text-muted py-4">
+            <i class="fas fa-campground fa-3x mb-3"></i>
+            <h5>Camp Groups View</h5>
+            <p>Camp groups functionality will be available soon.</p>
+            <small class="text-muted">This view will show ${attendanceData.length} attendees organized by their camp group assignments.</small>
+        </div>
+    `;
+}
+
 // Distribute the rendered tabbed content to separate view containers
 function distributeRenderedContent(tempContainer) {
+    console.log('🔍 Looking for content in temp container...');
+    
     // Find the tab content areas in the temporary container
     const summaryContent = tempContainer.querySelector('#attendance-summary');
     const detailedContent = tempContainer.querySelector('#attendance-detailed-groups');
+    
+    console.log('🔍 Found content:', {
+        summary: !!summaryContent,
+        detailed: !!detailedContent,
+        summaryHTML: summaryContent?.innerHTML?.length || 0,
+        detailedHTML: detailedContent?.innerHTML?.length || 0
+    });
     
     // Move content to our page containers
     if (summaryContent) {
         const summaryView = document.getElementById('summary-view');
         if (summaryView) {
+            console.log('📋 Moving summary content to summary-view');
             summaryView.innerHTML = '';
             summaryView.appendChild(summaryContent);
+        } else {
+            console.error('❌ summary-view container not found');
         }
+    } else {
+        console.error('❌ #attendance-summary content not found in temp container');
+        console.log('Available elements in temp:', Array.from(tempContainer.querySelectorAll('[id]')).map(el => el.id));
     }
     
     if (detailedContent) {
         const detailedView = document.getElementById('detailed-view');
         if (detailedView) {
+            console.log('📋 Moving detailed content to detailed-view');
             detailedView.innerHTML = '';
             detailedView.appendChild(detailedContent);
+        } else {
+            console.error('❌ detailed-view container not found');
         }
+    } else {
+        console.error('❌ #attendance-detailed-groups content not found in temp container');
     }
     
     // For camp groups, we'll create a simple placeholder for now
@@ -198,6 +347,20 @@ export function switchAttendanceView(view) {
     console.log(`Switching to attendance view: ${view}`);
     setAttendanceView(view);
 }
+
+// Placeholder function for viewing person details
+function viewPersonDetails(firstname, lastname) {
+    alert(`View details for ${firstname} ${lastname}\n\nThis will show detailed information about their event registrations and allow editing their information.`);
+}
+
+// Placeholder function for updating attendee status
+function updateAttendeeStatus(index, status) {
+    alert(`Update status for attendee at index ${index} to: ${status}\n\nThis will send the status update to the backend and refresh the view.`);
+}
+
+// Make functions globally available
+window.viewPersonDetails = viewPersonDetails;
+window.updateAttendeeStatus = updateAttendeeStatus;
 
 // Export for use in other modules
 export { initializeAttendancePage as default };
