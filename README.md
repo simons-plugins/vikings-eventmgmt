@@ -10,8 +10,9 @@ This application provides a modern, user-friendly interface for managing Scout e
 
 ### **Frontend** (`/src/`)
 - **Framework:** Vanilla JavaScript (ES6 modules)
-- **Styling:** Bootstrap 4 + Font Awesome
-- **Server:** Express HTTPS server (`https-server.js`)
+- **Styling:** Bootstrap 4 + Font Awesome + jQuery
+- **Build Tool:** Vite for development and production builds
+- **Server:** Vite dev server with HTTPS support
 - **Deployment:** Render.com
 
 ### **Backend**
@@ -37,15 +38,26 @@ This application provides a modern, user-friendly interface for managing Scout e
 - **Date-based event filtering**
 
 ### **4. Attendance Tracking**
-- **Dual-view interface:**
+- **Triple-view interface:**
   - **📊 Attendance Summary:** Simple table view
   - **📚 Attendance Detailed Groups:** Collapsible status groups
+  - **🏕️ Camp Groups:** Sign-in/out management with flexi records
 - **Status-based grouping** (Yes → No → Invited → Others)
 - **Color-coded status badges**
 
-### **5. Flexi Records**
-- **Integration ready** for flexi record management
-- **Console logging** for development/testing
+### **5. Camp Groups Management**
+- **Attendee organization** by camp groups from OSM flexi records
+- **Interactive attendee cards** with clickable popup modals
+- **Real-time sign-in/out tracking** with status indicators
+- **OSM flexi record integration** for data persistence
+- **Dynamic action buttons** based on current sign-in/out state
+- **User name and timestamp recording** for all sign actions
+
+### **6. Flexi Records Integration**
+- **Enhanced field mapping** from OSM flexi record structure
+- **Automatic field resolution** (f_1, f_2, etc. to readable names)
+- **Safe API validation** with field ID format checking
+- **Rate limiting protection** with single API call approach
 
 ## **🛡️ Security & Monitoring**
 
@@ -73,33 +85,51 @@ This application provides a modern, user-friendly interface for managing Scout e
 ```
 vikings-eventmgmt/
 ├── src/
-│   ├── index.html          # Main application
-│   ├── callback.html       # OAuth callback handler
-│   ├── main.js            # Application logic
-│   ├── api.js             # API integration layer
-│   ├── ui.js              # UI rendering functions
-│   ├── styles.css         # Custom styling
-│   └── favicon.ico        # Application icon
-├── https-server.js        # Local HTTPS server
-├── package.json          # Dependencies & scripts
-└── cypress/              # E2E testing
+│   ├── lib/                    # Core business logic modules
+│   │   ├── auth.js            # OAuth flow and token management
+│   │   ├── api.js             # HTTP requests and rate limiting
+│   │   ├── cache.js           # Data caching with expiry
+│   │   ├── handlers.js        # Event handlers
+│   │   └── page-router.js     # Page navigation system
+│   ├── pages/                  # Page initialization modules
+│   │   ├── sections-page.js   # Section selection page
+│   │   ├── events-page.js     # Event selection page
+│   │   └── attendance-page.js # Attendance views page
+│   ├── ui/                     # UI component modules
+│   │   ├── attendance.js      # Attendance table components
+│   │   └── camp-groups.js     # Camp groups with sign-in/out
+│   ├── styles/                 # CSS modules
+│   ├── index.html             # Main application
+│   ├── auth-success.html      # OAuth callback handler
+│   ├── main.js               # Application entry point
+│   ├── ui.js                 # Main UI functions
+│   └── favicon.ico           # Application icon
+├── package.json              # Dependencies & scripts
+├── vite.config.js           # Vite build configuration
+├── cypress/                 # E2E testing
+├── tests/                   # Unit tests
+├── CLAUDE.md               # Development guidance
+└── README.md
 ```
 
 ## **🔄 Data Flow**
-1. **User logs in** → OAuth with OSM → Token stored
+1. **User logs in** → OAuth with OSM → Token stored → User info displayed
 2. **Sections loaded** → Cached for performance
 3. **User selects sections** → Events fetched for selected sections
 4. **User selects events** → Attendance data retrieved
-5. **Data displayed** → Tabbed interface with summary/grouped views
+5. **Data displayed** → Triple-tab interface (summary/grouped/camp groups)
+6. **Camp Groups** → Flexi records fetched → Field mapping resolved
+7. **Sign-in/out actions** → Flexi records updated → Status refreshed
 
 ## **🎯 Current Status**
-- ✅ **Authentication:** Working OAuth flow
+- ✅ **Authentication:** Working OAuth flow with user info display
 - ✅ **Section Management:** Cached loading system
 - ✅ **Event Management:** Multi-selection interface  
-- ✅ **Attendance Views:** Dual-tab interface completed
-- ✅ **Rate Limiting:** Comprehensive monitoring
+- ✅ **Attendance Views:** Triple-tab interface completed
+- ✅ **Camp Groups:** Complete sign-in/out functionality with modals
+- ✅ **Flexi Records:** Full integration with field mapping and validation
+- ✅ **Rate Limiting:** Comprehensive monitoring with safety measures
 - ✅ **Blocking Protection:** Multi-level security
-- 🟡 **Flexi Records:** API integration ready, UI pending
 - ✅ **Error Handling:** Enhanced detection & recovery
 
 ## **🚀 Deployment**
@@ -168,11 +198,12 @@ node https-server.js
 ```
 
 ## **🔧 Technologies Used**
-- **Frontend:** JavaScript ES6, Bootstrap 4, Font Awesome
-- **Testing:** Cypress E2E testing
+- **Frontend:** JavaScript ES6, Bootstrap 4, Font Awesome, jQuery
+- **Build Tool:** Vite with ES6 modules and HTTPS support
+- **Testing:** Vitest (unit tests), Cypress (E2E testing)
 - **Deployment:** Render.com
-- **API:** OSM REST API integration
-- **Security:** OAuth2, rate limiting, blocking detection
+- **API:** OSM REST API integration with proxy backend
+- **Security:** OAuth2, rate limiting, blocking detection, field validation
 
 ## **💻 Development Setup**
 
@@ -190,22 +221,24 @@ cd vikings-eventmgmt
 # Install dependencies
 npm install
 
-# Start local HTTPS server
-npm start
-# or
-node https-server.js
+# Start Vite development server
+npm run dev
 
-# Open in browser
-https://localhost:3000
+# Open in browser (usually auto-opens)
+https://localhost:3001
 ```
 
 ### **Testing**
 ```bash
-# Run E2E tests
-npm run cypress:open
+# Run unit tests
+npm test
+npm run test:ui          # Run with UI
+npm run test:coverage    # With coverage
 
-# Run tests in headless mode
-npm run cypress:run
+# Run E2E tests
+npm run cypress:open     # Interactive mode
+npm run cypress:run      # Headless mode
+npm run test:e2e         # E2E against dev server
 ```
 
 ## **🔐 Environment Variables**
@@ -217,11 +250,37 @@ FRONTEND_URL=https://vikings-eventmgmt.onrender.com
 OAUTH_REDIRECT_URI=https://vikings-eventmgmt.onrender.com/callback.html
 ```
 
+## **🏕️ Camp Groups Feature**
+
+The camp groups functionality provides comprehensive attendee management with real-time sign-in/out tracking:
+
+### **Key Features**
+- **Smart Organization**: Automatically groups attendees by camp assignments from OSM "Viking Event Mgmt" flexi record
+- **Interactive Interface**: Clickable attendee cards with hover effects and status indicators
+- **Modal Popups**: Detailed attendee information with dynamic action buttons
+- **Real-time Updates**: Sign-in/out actions update OSM flexi records with user name and timestamp
+- **Status Tracking**: Visual indicators (Not Signed In → Signed In → Signed Out)
+
+### **Technical Implementation**
+- **Field Mapping**: Automatically resolves OSM field IDs (f_1, f_2, etc.) to readable names
+- **API Safety**: Single API call per action with validation to prevent rate limiting
+- **User Context**: Records current user name and timestamp for all sign actions
+- **Modal Framework**: Bootstrap modals with jQuery and vanilla JavaScript fallback
+- **Error Handling**: Comprehensive validation and user-friendly error messages
+
+### **Usage Flow**
+1. Navigate to **Camp Groups** tab in attendance view
+2. View attendees organized by camp group assignments
+3. Click any attendee card to open detailed popup
+4. Use **Sign In** or **Sign Out** buttons to update status
+5. Status updates are immediately reflected in OSM flexi records
+
 ## **📈 Monitoring**
 - **Rate limit tracking** via OSM API headers
-- **Error logging** with Sentry integration
+- **Error logging** with Sentry integration (backend)
 - **Performance monitoring** via browser dev tools
 - **Application blocking detection** with immediate alerts
+- **Structured logging** for flexi record operations
 
 ---
 

@@ -39,6 +39,7 @@ This is a vanilla JavaScript ES6 application with modular architecture:
 - **Event Handlers**: `src/lib/handlers.js` - Section/event selection handlers
 - **UI Components**: `src/ui.js` - Main UI rendering functions
 - **Attendance UI**: `src/ui/attendance.js` - Attendance-specific UI components
+- **Camp Groups UI**: `src/ui/camp-groups.js` - Camp groups management with sign-in/out functionality
 
 ### Backend Integration
 - **Backend URL**: `https://vikings-osm-event-manager.onrender.com`
@@ -99,6 +100,8 @@ src/
 - Check `sessionStorage.access_token` for login status
 - Use `isAuthenticated()` from `src/lib/auth.js`
 - Token validation happens on app load via `getUserRoles()` API call
+- User info stored in `sessionStorage.user_info` from OSM startup data
+- User name displayed in header when authenticated
 
 ### Caching Strategy
 - Sections cached in `localStorage.viking_sections_cache` (24h expiry)
@@ -113,6 +116,61 @@ src/
 
 ### UI Architecture
 - Bootstrap 4 for styling with custom CSS in `src/styles/`
+- jQuery and Bootstrap JavaScript for modal functionality
 - Modular UI functions in `src/ui.js` and `src/ui/` subdirectory
-- Attendance views: Summary table and grouped status views
+- Attendance views: Summary table, grouped status views, and camp groups
 - Loading states and spinners for async operations
+
+## Camp Groups Functionality
+
+### Overview
+The camp groups feature provides comprehensive attendee management with sign-in/out tracking using OSM flexi records.
+
+### Features
+- **Attendee Organization**: Displays attendees grouped by camp assignments from "Viking Event Mgmt" flexi record
+- **Interactive Cards**: Clickable attendee cards showing basic info and current sign-in/out status
+- **Detailed Popups**: Modal dialogs with comprehensive attendee information and action buttons
+- **Status Tracking**: Real-time sign-in/out status with color-coded visual indicators
+- **Flexi Record Integration**: Updates OSM flexi records with user name and timestamp
+
+### Technical Implementation
+
+**Data Flow:**
+1. `enrichAttendeesWithCampGroups()` fetches camp group data from OSM flexi records
+2. Field mapping resolves `f_1`, `f_2`, etc. to readable field names
+3. `renderCampGroupsPage()` creates collapsible group sections with attendee cards
+4. Click handlers open modals with `showAttendeeDetails()`
+5. Sign-in/out actions call `updateFlexiRecord()` API
+
+**API Integration:**
+- `getFlexiRecords()` - List available flexi records for section
+- `getSingleFlexiRecord()` - Get detailed camp group data
+- `getFlexiStructure()` - Map field IDs to readable names
+- `updateFlexiRecord()` - Update sign-in/out fields with validation
+- `getStartupData()` - Get current user info for sign actions
+
+**Safety Measures:**
+- Single API call per sign-in/out action to prevent rate limiting
+- Field ID validation (f_1, f_2, etc.) before API calls
+- 500ms delays between consecutive API calls
+- Comprehensive error handling and user feedback
+- Global flexi record info storage for sign actions
+
+**Modal Functionality:**
+- Bootstrap modal with jQuery fallback for compatibility
+- Dynamic content based on current sign-in/out status
+- Action buttons appear/disappear based on current state
+- Success feedback with automatic modal closure
+
+### Field Mapping
+The system automatically maps OSM flexi record fields:
+- Searches for fields containing "signed in by", "signed out by", "camp group"
+- Supports both space-separated and camelCase field names
+- Creates friendly names from field mapping configuration
+- Stores mapping globally for sign-in/out operations
+
+### Status Logic
+- **Not Signed In**: Red indicator, "Sign In" button available
+- **Signed In**: Green indicator, "Sign Out" button available  
+- **Signed Out**: Yellow indicator, "Sign In" button available
+- Status determined by presence of sign-out data (most recent action)

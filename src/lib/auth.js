@@ -216,6 +216,34 @@ export async function checkForToken() {
             await getUserRoles(); // This call will implicitly use the token and fail if it's invalid
             // If getUserRoles succeeds, the token is considered valid.
             console.log('Token is valid, showing main UI');
+            
+            // Fetch user information for display in header
+            try {
+                const { getStartupData } = await import('./api.js');
+                const startupData = await getStartupData();
+                if (startupData && startupData.globals && startupData.globals.firstname) {
+                    // Store user info for later use
+                    const userInfo = {
+                        firstname: startupData.globals.firstname,
+                        lastname: startupData.globals.lastname || '',
+                        fullname: `${startupData.globals.firstname} ${startupData.globals.lastname || ''}`.trim()
+                    };
+                    sessionStorage.setItem('user_info', JSON.stringify(userInfo));
+                    
+                    // Display user name in header
+                    const userInfoDiv = document.getElementById('user-info');
+                    const userName = document.getElementById('user-name');
+                    if (userInfoDiv && userName) {
+                        userName.textContent = startupData.globals.firstname;
+                        userInfoDiv.style.display = 'block';
+                        console.log('User name displayed:', startupData.globals.firstname);
+                    }
+                }
+            } catch (error) {
+                console.warn('Could not fetch user name:', error);
+                // Continue without user name display
+            }
+            
             document.body.classList.remove('login-screen'); // Remove login-specific body class
             updateSidebarToggleVisibility(); // Update UI elements like sidebar visibility
             showMainUI(); // Display the main application interface

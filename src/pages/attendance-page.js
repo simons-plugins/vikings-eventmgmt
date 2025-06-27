@@ -149,8 +149,8 @@ async function renderAttendanceViewsSimple(attendanceData) {
         // Render detailed view
         renderDetailedView(attendanceData);
         
-        // Render camp groups view (placeholder)
-        renderCampGroupsView(attendanceData);
+        // Render camp groups view with enriched data
+        await renderCampGroupsView(attendanceData);
         
     } catch (error) {
         console.error('❌ Error rendering attendance views:', error);
@@ -270,19 +270,62 @@ function renderDetailedView(attendanceData) {
     `;
 }
 
-// Render the camp groups view
-function renderCampGroupsView(attendanceData) {
+// Render the camp groups view with actual enriched data
+async function renderCampGroupsView(attendanceData) {
     const campGroupsView = document.getElementById('campgroups-view');
     if (!campGroupsView) return;
     
-    campGroupsView.innerHTML = `
-        <div class="text-center text-muted py-4">
-            <i class="fas fa-campground fa-3x mb-3"></i>
-            <h5>Camp Groups View</h5>
-            <p>Camp groups functionality will be available soon.</p>
-            <small class="text-muted">This view will show ${attendanceData.length} attendees organized by their camp group assignments.</small>
-        </div>
-    `;
+    try {
+        // Show loading state
+        campGroupsView.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Loading camp group data...</p>
+            </div>
+        `;
+        
+        // Get unique attendees (remove duplicates by scoutid)
+        const uniqueAttendees = attendanceData.filter((attendee, index, arr) => 
+            index === arr.findIndex(a => a.scoutid === attendee.scoutid)
+        );
+        
+        // Get unique section IDs from the attendance data
+        const uniqueSectionIds = [...new Set(attendanceData.map(a => a.sectionid))];
+        
+        console.log(`Enriching ${uniqueAttendees.length} unique attendees from ${uniqueSectionIds.length} sections`);
+        
+        // Import enrichment function
+        const { enrichAttendeesWithCampGroups } = await import('../lib/api.js');
+        
+        // Enrich attendees with camp group data
+        const enrichedAttendees = await enrichAttendeesWithCampGroups(uniqueAttendees, uniqueSectionIds);
+        
+        console.log(`Enriched attendees:`, enrichedAttendees);
+        
+        // Import and render the camp groups page
+        const { renderCampGroupsPage } = await import('../ui/camp-groups.js');
+        
+        // Create a container for the camp groups content
+        campGroupsView.innerHTML = '<div id="camp-groups-container"></div>';
+        
+        // Render the camp groups
+        renderCampGroupsPage(enrichedAttendees);
+        
+    } catch (error) {
+        console.error('Error loading camp groups:', error);
+        campGroupsView.innerHTML = `
+            <div class="text-center text-danger py-4">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h5>Error Loading Camp Groups</h5>
+                <p>${error.message || 'Failed to load camp group data'}</p>
+                <button class="btn btn-outline-primary" onclick="location.reload()">
+                    <i class="fas fa-sync me-2"></i>Try Again
+                </button>
+            </div>
+        `;
+    }
 }
 
 // Distribute the rendered tabbed content to separate view containers
