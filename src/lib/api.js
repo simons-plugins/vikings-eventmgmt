@@ -455,7 +455,7 @@ export async function enrichAttendeesWithCampGroups(attendees, selectedSectionId
             console.log(`Found Viking Event Mgmt record: ${vikingEventRecord.extraid} for section ${sectionId}`);
             
             // Get flexi structure to map field names
-            const flexiStructure = await getFlexiStructure(vikingEventRecord.extraid, sectionId);
+            const flexiStructure = await getFlexiStructure(vikingEventRecord.extraid, sectionId, termId);
             const fieldMapping = {};
             
             if (flexiStructure) {
@@ -487,6 +487,16 @@ export async function enrichAttendeesWithCampGroups(attendees, selectedSectionId
                 }
                 
                 console.log('Field mapping extracted:', fieldMapping);
+            }
+            
+            // Store flexi record info globally for sign-in/out functionality
+            if (typeof window !== 'undefined') {
+                window.currentFlexiRecordInfo = {
+                    sectionId: sectionId,
+                    flexiRecordId: vikingEventRecord.extraid,
+                    termId: termId,
+                    fieldMapping: fieldMapping
+                };
             }
             
             // Get detailed camp group data using the extraid as flexirecordid
@@ -559,12 +569,13 @@ export async function enrichAttendeesWithCampGroups(attendees, selectedSectionId
     }
 }
 
-// Fetches flexi record structure and field mappings for a given extraid and sectionid.
+// Fetches flexi record structure and field mappings for a given extraid, sectionid and termid.
 // extraid: The ID of the flexi record.
 // sectionid: The ID of the section.
+// termid: The ID of the term.
 // Returns the flexi record structure object if found, null otherwise.
 // Expected flexi record structure: { fields: { fieldname: { type: string, label: string, ... }, ... }, ... }
-export async function getFlexiStructure(extraid, sectionid) {
+export async function getFlexiStructure(extraid, sectionid, termid) {
     try {
         const token = getToken();
         if (!token) {
@@ -572,7 +583,7 @@ export async function getFlexiStructure(extraid, sectionid) {
             return null;
         }
 
-        const response = await fetch(`${BACKEND_URL}/get-flexi-structure?extraid=${extraid}&sectionid=${sectionid}`, {
+        const response = await fetch(`${BACKEND_URL}/get-flexi-structure?flexirecordid=${extraid}&sectionid=${sectionid}&termid=${termid}`, {
             method: 'GET',
             headers: { 
                 'Authorization': `Bearer ${token}`,
@@ -585,6 +596,71 @@ export async function getFlexiStructure(extraid, sectionid) {
         
     } catch (error) {
         console.error('Error fetching flexi structure:', error);
+        throw error;
+    }
+}
+
+// Fetches startup data including user information and global settings
+// Returns startup data object with user info (firstname, etc.) and global settings
+export async function getStartupData() {
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return null;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/get-startup-data`, {
+            method: 'GET',
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json' 
+            }
+        });
+        
+        const data = await handleAPIResponseWithRateLimit(response, 'getStartupData');
+        return data || null;
+        
+    } catch (error) {
+        console.error('Error fetching startup data:', error);
+        throw error;
+    }
+}
+
+// Updates a flexi record field for a specific scout
+// sectionid: The section ID
+// scoutid: The scout ID  
+// flexirecordid: The flexi record ID (extraid)
+// columnid: The field/column ID to update
+// value: The new value to set
+export async function updateFlexiRecord(sectionid, scoutid, flexirecordid, columnid, value) {
+    try {
+        const token = getToken();
+        if (!token) {
+            handleTokenExpiration();
+            return null;
+        }
+
+        const response = await fetch(`${BACKEND_URL}/update-flexi-record`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({
+                sectionid,
+                scoutid,
+                flexirecordid,
+                columnid,
+                value
+            })
+        });
+        
+        const data = await handleAPIResponseWithRateLimit(response, 'updateFlexiRecord');
+        return data || null;
+        
+    } catch (error) {
+        console.error('Error updating flexi record:', error);
         throw error;
     }
 }
